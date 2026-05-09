@@ -47,8 +47,12 @@ def create_app():
     ) == '1'
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['PREFERRED_URL_SCHEME'] = 'https' if is_production else 'http'
     app.config['WTF_CSRF_ENABLED'] = True
     app.config['WTF_CSRF_TIME_LIMIT'] = 3600
+    # In reverse-proxy deployments, strict SSL referrer checks can fail if
+    # upstream/proxy normalization differs between hostnames.
+    app.config['WTF_CSRF_SSL_STRICT'] = os.environ.get('WTF_CSRF_SSL_STRICT', '0') == '1'
     app.config['DATABASE'] = os.path.join(os.path.dirname(__file__), 'data.db')
     app.config['TEMPLATES_AUTO_RELOAD'] = False
 

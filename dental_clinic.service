@@ -6,6 +6,9 @@ After=network.target
 User=root
 WorkingDirectory=/root/dental_clinic
 Environment="PATH=/root/dental_clinic/.venv/bin"
+Environment="APP_ENV=production"
+Environment="SESSION_COOKIE_SECURE=1"
+Environment="WTF_CSRF_SSL_STRICT=0"
 ExecStart=/root/dental_clinic/.venv/bin/gunicorn -c gunicorn.conf.py app:app
 Restart=always
 RestartSec=3

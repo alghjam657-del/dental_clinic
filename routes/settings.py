@@ -3,7 +3,6 @@
 System Settings Blueprint
 """
 
-import hashlib
 import json
 import os
 import shutil
@@ -14,6 +13,7 @@ from flask import (Blueprint, flash, redirect, render_template,
 
 from db.database import get_db
 from routes.auth import login_required
+from security_utils import hash_password, verify_password
 
 settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 
@@ -198,7 +198,7 @@ def add_user():
         flash('اسم المستخدم موجود مسبقاً', 'danger')
         return redirect(url_for('settings.index', tab='users'))
 
-    pw_hash = hashlib.sha256(password.encode()).hexdigest()
+    pw_hash = hash_password(password)
     db.execute(
         "INSERT INTO users (username, password, full_name, role) VALUES (?, ?, ?, ?)",
         (username, pw_hash, full_name, role)
@@ -222,7 +222,7 @@ def edit_user(uid):
 
     db = get_db()
     if password:
-        pw_hash = hashlib.sha256(password.encode()).hexdigest()
+        pw_hash = hash_password(password)
         db.execute(
             "UPDATE users SET full_name=?, role=?, password=? WHERE id=?",
             (full_name, role, pw_hash, uid)
@@ -283,12 +283,12 @@ def change_password():
         "SELECT password FROM users WHERE id=?", (session['user_id'],)
     ).fetchone()
 
-    old_hash = hashlib.sha256(old_pw.encode()).hexdigest()
-    if user['password'] != old_hash:
+    is_valid, _ = verify_password(user['password'], old_pw)
+    if not is_valid:
         flash('كلمة المرور الحالية غير صحيحة', 'danger')
         return redirect(url_for('settings.index', tab='security'))
 
-    new_hash = hashlib.sha256(new_pw.encode()).hexdigest()
+    new_hash = hash_password(new_pw)
     db.execute("UPDATE users SET password=? WHERE id=?", (new_hash, session['user_id']))
     db.commit()
     log_activity('تغيير كلمة المرور')

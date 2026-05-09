@@ -6,6 +6,7 @@ Database Connection and Initialization
 import sqlite3
 import os
 from flask import g, current_app
+from security_utils import hash_password
 
 
 def get_db():
@@ -224,13 +225,12 @@ def init_db(app):
         db.commit()
 
         # ─── إنشاء مستخدم افتراضي إذا لم يوجد ────────────────────
-        import hashlib
         admin_check = cursor.execute(
             "SELECT id FROM users WHERE username = 'admin'"
         ).fetchone()
 
         if not admin_check:
-            password_hash = hashlib.sha256('admin123'.encode()).hexdigest()
+            password_hash = hash_password('admin123')
             cursor.execute(
                 "INSERT INTO users (username, password, full_name, role) VALUES (?, ?, ?, ?)",
                 ('admin', password_hash, 'مدير النظام', 'admin')

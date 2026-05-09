@@ -8,6 +8,7 @@ from flask import Flask, redirect, url_for, request, session, flash
 from flask_session import Session
 from flask_wtf import CSRFProtect
 from flask_wtf.csrf import CSRFError
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 
 from db.database import init_db
@@ -28,13 +29,22 @@ csrf = CSRFProtect()
 def create_app():
     app = Flask(__name__)
 
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
+    env_name = os.environ.get('FLASK_ENV', '').lower() or os.environ.get('APP_ENV', '').lower()
+    is_production = env_name == 'production'
+
     # ─── إعدادات التطبيق ─────────────────────────────────────────
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dental-clinic-secret-2024-xK9mP')
     app.config['DEBUG'] = False
     app.config['SESSION_TYPE'] = 'filesystem'
     app.config['SESSION_FILE_DIR'] = os.path.join(os.path.dirname(__file__), 'flask_session')
-    app.config['SESSION_PERMANENT'] = False
-    app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', '1') == '1'
+    app.config['SESSION_PERMANENT'] = True
+    app.config['PERMANENT_SESSION_LIFETIME'] = int(os.environ.get('SESSION_LIFETIME_SECONDS', '43200'))
+    app.config['SESSION_COOKIE_SECURE'] = os.environ.get(
+        'SESSION_COOKIE_SECURE',
+        '1' if is_production else '0'
+    ) == '1'
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['WTF_CSRF_ENABLED'] = True

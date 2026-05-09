@@ -1,0 +1,585 @@
+{% extends "base.html" %}
+{% block title %}وصفة طبية{% endblock %}
+
+{% block content %}
+<style>
+/* ═══════════════ الأدوات ═══════════════ */
+.rx-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.rx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: .92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  text-decoration: none;
+}
+.rx-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.15); }
+.rx-btn-primary  { background: linear-gradient(135deg,#4f46e5,#6366f1); color:#fff; }
+.rx-btn-red      { background: linear-gradient(135deg,#e11d48,#f43f5e); color:#fff; }
+.rx-btn-ghost    { background: #f1f5f9; color: #334155; }
+
+/* ═══════════════ الورقة ═══════════════ */
+.rx-paper {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(15,23,42,.14);
+  max-width: 880px;
+  margin: 0 auto;
+  font-family: 'Cairo', sans-serif;
+}
+
+/* رأس الوصفة */
+.rx-head {
+  background: linear-gradient(120deg, #0f172a 0%, #1e40af 55%, #3b82f6 100%);
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.rx-head::before {
+  content: '';
+  position: absolute;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  top: -80px; left: -60px;
+}
+.rx-head-info h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+.rx-head-info p {
+  margin: 4px 0 0;
+  color: #bfdbfe;
+  font-size: .88rem;
+}
+.rx-head-symbol {
+  width: 72px; height: 72px;
+  background: rgba(255,255,255,.12);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; font-weight: 900; color: #bfdbfe;
+  border: 2px solid rgba(255,255,255,.2);
+  flex-shrink: 0;
+}
+.rx-head-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.rx-head-date label {
+  color: #93c5fd;
+  font-size: .78rem;
+}
+.rx-head-date input {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #fff;
+  font-size: .88rem;
+  width: 148px;
+  outline: none;
+}
+.rx-head-date input:focus {
+  background: rgba(255,255,255,.22);
+  border-color: rgba(255,255,255,.5);
+}
+
+/* جسم الوصفة */
+.rx-body { padding: 28px 32px; }
+
+/* بطاقة المريض */
+.rx-patient-card {
+  background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+  border: 1.5px solid #bfdbfe;
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 22px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.rx-field label {
+  display: block;
+  font-size: .78rem;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 5px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.rx-field input,
+.rx-field select,
+.rx-field textarea {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid #dbeafe;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: .9rem;
+  font-family: inherit;
+  color: #0f172a;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.rx-field input:focus,
+.rx-field select:focus,
+.rx-field textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+}
+.rx-diag {
+  grid-column: 1 / -1;
+}
+
+/* تقسيم اسم مريض وقائمة */
+.rx-patient-names {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  grid-column: 1 / -1;
+}
+
+/* عنوان قسم الأدوية */
+.rx-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.rx-section-title span {
+  font-size: .95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.rx-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(90deg, #6366f1, transparent);
+}
+
+/* جدول الأدوية */
+.rx-drugs-table-wrap {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid #e2e8f0;
+}
+.rx-drugs-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+.rx-drugs-table thead tr {
+  background: linear-gradient(90deg, #eff6ff, #eef2ff);
+}
+.rx-drugs-table th {
+  padding: 11px 10px;
+  font-size: .78rem;
+  font-weight: 800;
+  color: #1e40af;
+  text-align: center;
+  white-space: nowrap;
+}
+.rx-drugs-table tbody tr {
+  border-top: 1px solid #f1f5f9;
+  transition: background .15s;
+}
+.rx-drugs-table tbody tr:hover { background: #fafbff; }
+.rx-drugs-table td {
+  padding: 6px 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+.rx-drugs-table .rx-num {
+  width: 36px;
+  font-weight: 700;
+  color: #6366f1;
+  font-size: .9rem;
+}
+.rx-drugs-table input,
+.rx-drugs-table textarea,
+.rx-drugs-table select {
+  width: 100%;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: .85rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s;
+  resize: none;
+}
+.rx-drugs-table input:focus,
+.rx-drugs-table textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99,102,241,.1);
+}
+.rx-drugs-table .del-btn {
+  width: 30px; height: 30px;
+  background: #fee2e2;
+  border: none;
+  border-radius: 8px;
+  color: #dc2626;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .8rem;
+  margin: auto;
+  transition: background .15s;
+}
+.rx-drugs-table .del-btn:hover { background: #fecaca; }
+
+/* تذييل الوصفة */
+.rx-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 2px dashed #dbeafe;
+}
+.rx-sign-area {
+  border: 1.5px dashed #94a3b8;
+  border-radius: 14px;
+  padding: 14px 18px;
+  min-height: 100px;
+}
+.rx-sign-area h6 {
+  font-size: .82rem;
+  font-weight: 800;
+  color: #334155;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rx-sign-line {
+  border-bottom: 1.5px solid #334155;
+  margin-top: 8px;
+}
+
+/* شريط قاعدة الورقة */
+.rx-paper-footer {
+  background: linear-gradient(90deg, #0f172a, #1e40af);
+  padding: 10px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .78rem;
+  color: #93c5fd;
+}
+
+/* ═══════════════ طباعة ═══════════════ */
+@media print {
+  @page { size: A4 portrait; margin: 8mm 10mm; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  body { margin: 0 !important; background: #fff !important; }
+
+  .sidebar, .mobile-topbar, .mobile-bottom-nav,
+  #mobileBackdrop, .alert, #toast-container,
+  .rx-toolbar, .page-title, .page-subtitle { display: none !important; }
+
+  .main-content {
+    margin: 0 !important; padding: 0 !important;
+    width: 100% !important; max-width: 100% !important;
+  }
+
+  .rx-paper { box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; }
+
+  .rx-head { padding: 14px 18px !important; }
+  .rx-body { padding: 14px 18px !important; }
+  .rx-patient-card { padding: 12px 14px !important; margin-bottom: 14px !important; }
+
+  .rx-drugs-table input,
+  .rx-drugs-table textarea,
+  .rx-drugs-table select {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font-size: 11px !important;
+    resize: none !important;
+  }
+  .rx-field input,
+  .rx-field select,
+  .rx-field textarea {
+    border: none !important;
+    background: transparent !important;
+    padding: 2px !important;
+    font-size: 11px !important;
+  }
+  .del-btn, #addMedicineBtn { display: none !important; }
+  .no-print { display: none !important; }
+
+  .rx-head-date input {
+    background: transparent !important;
+    border: none !important;
+    color: #fff !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .rx-head { padding: 18px; flex-wrap: wrap; }
+  .rx-body { padding: 16px; }
+  .rx-patient-card { grid-template-columns: 1fr; }
+  .rx-patient-names { grid-template-columns: 1fr; }
+  .rx-footer { grid-template-columns: 1fr; }
+  .rx-paper-footer { flex-direction: column; gap: 4px; text-align: center; }
+}
+</style>
+
+<h2 class="page-title"><i class="fas fa-prescription"></i> وصفة طبية</h2>
+
+<!-- أزرار التحكم -->
+<div class="rx-toolbar">
+  <button type="button" class="rx-btn rx-btn-primary" onclick="window.print()">
+    <i class="fas fa-print"></i> طباعة
+  </button>
+  <button type="button" class="rx-btn rx-btn-red" id="pdfBtn" onclick="downloadPrescriptionPdf()">
+    <i class="fas fa-file-pdf"></i> تصدير PDF
+  </button>
+  <button type="button" class="rx-btn rx-btn-ghost" id="addMedicineBtn" onclick="addMedicineRow()">
+    <i class="fas fa-plus-circle"></i> إضافة دواء
+  </button>
+  <a href="{{ url_for('patients.index') }}" class="rx-btn rx-btn-ghost">
+    <i class="fas fa-arrow-right"></i> رجوع
+  </a>
+</div>
+
+<!-- ورقة الوصفة -->
+<form id="prescriptionForm" class="rx-paper">
+
+  <!-- رأس الوصفة -->
+  <div class="rx-head">
+    <div class="rx-head-symbol">℞</div>
+    <div class="rx-head-info">
+      <h2 id="clinicNameDisplay">عيادة الأسنان التخصصية</h2>
+      <p>د. علي حسين &nbsp;|&nbsp; <i class="fas fa-phone fa-xs"></i> <span dir="ltr">0770 854 9651</span></p>
+      <p style="opacity:.7;font-size:.8rem;margin-top:2px"><i class="fas fa-map-marker-alt fa-xs"></i> كركوك، العراق</p>
+    </div>
+    <div class="rx-head-date">
+      <label><i class="fas fa-calendar-day fa-xs"></i> تاريخ الوصفة</label>
+      <input type="date" id="prescriptionDate" name="prescription_date">
+    </div>
+  </div>
+
+  <!-- جسم الوصفة -->
+  <div id="prescriptionPdfArea" class="rx-body">
+
+    <!-- بيانات المريض -->
+    <div class="rx-patient-card">
+      <div class="rx-patient-names">
+        <div class="rx-field" style="grid-column:1/-1">
+          <label><i class="fas fa-user fa-xs"></i> اسم المريض <span class="no-print">— اكتب أو اختر من القائمة</span></label>
+          <input type="text" id="patientName" name="patient_name" list="patientsList"
+                 value="{{ selected_patient_name or '' }}" placeholder="اكتب الاسم أو ابحث..." autocomplete="off">
+          <datalist id="patientsList">
+            {% for p in patients %}
+            <option value="{{ p.full_name }}"></option>
+            {% endfor %}
+          </datalist>
+        </div>
+      </div>
+      <div class="rx-field rx-diag">
+        <label><i class="fas fa-stethoscope fa-xs"></i> التشخيص الطبي</label>
+        <textarea id="diagnosis" name="diagnosis" rows="2" placeholder="اكتب التشخيص هنا..."></textarea>
+      </div>
+    </div>
+
+    <!-- جدول الأدوية -->
+    <div class="rx-section-title">
+      <i class="fas fa-pills" style="color:#6366f1"></i>
+      <span>الأدوية الموصوفة</span>
+    </div>
+
+    <div class="rx-drugs-table-wrap">
+    <table class="rx-drugs-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>اسم الدواء</th>
+          <th>الجرعة</th>
+          <th>التكرار</th>
+          <th>المدة</th>
+          <th>تعليمات</th>
+          <th class="screen-only" style="width:46px"></th>
+        </tr>
+      </thead>
+      <tbody id="medicineTableBody"></tbody>
+    </table>
+    </div>
+
+    <!-- تذييل التوقيع -->
+    <div class="rx-footer">
+      <div class="rx-sign-area">
+        <h6><i class="fas fa-stamp" style="color:#6366f1"></i> الختم الرسمي</h6>
+      </div>
+      <div class="rx-sign-area">
+        <h6><i class="fas fa-pen-nib" style="color:#6366f1"></i> توقيع الطبيب</h6>
+        <div class="rx-sign-line"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- شريط القاعدة -->
+  <div class="rx-paper-footer">
+    <span><i class="fas fa-shield-alt fa-xs"></i> وصفة طبية رسمية — غير قابلة للتعديل بعد الطباعة</span>
+    <span id="rxFooterDate"></span>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+// datalist handles patient selection natively — no extra JS needed
+
+function addMedicineRow() {
+  const tbody = document.getElementById('medicineTableBody');
+  const idx = tbody.children.length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="rx-num">${idx}</td>
+    <td><input type="text" name="drug_name[]" placeholder="اسم الدواء"></td>
+    <td><input type="text" name="dosage[]" placeholder="500mg"></td>
+    <td><input type="text" name="frequency[]" placeholder="3 مرات يومياً"></td>
+    <td><input type="text" name="duration[]" placeholder="5 أيام"></td>
+    <td><textarea name="instructions[]" rows="1" placeholder="بعد الطعام..."></textarea></td>
+    <td class="screen-only">
+      <button type="button" class="del-btn" onclick="removeRow(this)" title="حذف">
+        <i class="fas fa-times"></i>
+      </button>
+    </td>`;
+  tbody.appendChild(tr);
+}
+
+function removeRow(btn) {
+  btn.closest('tr').remove();
+  refreshNums();
+}
+
+function refreshNums() {
+  document.querySelectorAll('#medicineTableBody .rx-num').forEach((c, i) => c.textContent = i + 1);
+}
+
+function setPdfLoading(on) {
+  const btn = document.getElementById('pdfBtn');
+  btn.disabled = on;
+  btn.innerHTML = on
+    ? '<i class="fas fa-spinner fa-spin"></i> جاري التجهيز...'
+    : '<i class="fas fa-file-pdf"></i> تصدير PDF';
+}
+
+async function downloadPrescriptionPdf() {
+  const source = document.getElementById('prescriptionForm');
+  const patientName = (document.getElementById('patientName').value.trim() || 'patient')
+    .replace(/[\\/:*?"<>|]+/g, '-')
+    .replace(/\s+/g, '-');
+  let wrapper = null;
+
+  setPdfLoading(true);
+
+  try {
+    if (typeof html2pdf === 'undefined') {
+      throw new Error('html2pdf not loaded');
+    }
+
+    const clone = source.cloneNode(true);
+
+    clone.querySelectorAll('input, textarea, select').forEach((el) => {
+      if (el.tagName === 'SELECT') {
+        const selectedText = el.options[el.selectedIndex]?.text || '';
+        const span = document.createElement('span');
+        span.textContent = selectedText;
+        el.replaceWith(span);
+      } else {
+        const span = document.createElement('span');
+        span.textContent = el.value || '';
+        el.replaceWith(span);
+      }
+    });
+
+    clone.querySelectorAll('.screen-only, .no-print').forEach((el) => el.remove());
+
+    wrapper = document.createElement('div');
+    wrapper.setAttribute('dir', 'rtl');
+    wrapper.setAttribute('lang', 'ar');
+    wrapper.style.padding = '8mm';
+    wrapper.style.background = '#ffffff';
+    wrapper.style.direction = 'rtl';
+
+    const exportStyle = document.createElement('style');
+    exportStyle.textContent = `
+      .rx-paper, .rx-paper * {
+        font-family: 'Cairo', Tahoma, Arial, sans-serif !important;
+        letter-spacing: 0 !important;
+        word-spacing: 0 !important;
+        text-transform: none !important;
+        direction: rtl !important;
+      }
+      .rx-head-date, .rx-head-date * { direction: ltr !important; }
+    `;
+    wrapper.appendChild(exportStyle);
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+
+    await html2pdf().set({
+      margin: [0, 0, 0, 0],
+      filename: `prescription-${patientName}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css'] },
+    }).from(wrapper).save();
+  } catch (err) {
+    console.error(err);
+    alert('تعذر تصدير PDF حالياً.');
+  } finally {
+    if (wrapper && wrapper.parentNode) {
+      wrapper.remove();
+    }
+    setPdfLoading(false);
+  }
+}
+
+(function init() {
+  const today = new Date();
+  document.getElementById('prescriptionDate').value = today.toISOString().slice(0, 10);
+  document.getElementById('rxFooterDate').textContent = today.toLocaleDateString('ar-EG', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+  addMedicineRow();
+  addMedicineRow();
+})();
+</script>
+{% endblock %}

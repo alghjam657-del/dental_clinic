@@ -1,0 +1,65 @@
+{% if appointments %}
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th>الوقت</th>
+      <th>المريض</th>
+      <th>الهاتف</th>
+      <th>الحالة</th>
+      <th>ملاحظات</th>
+      <th>الإجراءات</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in appointments %}
+    <tr>
+      <td><strong>{{ a.appointment_time | fmt12h }}</strong></td>
+      <td>
+        {% if a.patient_id %}
+          <a href="{{ url_for('patients.profile', patient_id=a.patient_id) }}">{{ a.patient_name }}</a>
+        {% else %}
+          <span>{{ a.patient_name }}</span>
+        {% endif %}
+      </td>
+      <td>{{ a.patient_phone or '—' }}</td>
+      <td>
+        <span class="badge badge-{{ a.status }}">{{ a.status | status_label }}</span>
+      </td>
+      <td>{{ a.notes or '—' }}</td>
+      <td class="actions">
+        <button class="btn btn-xs btn-outline"
+                onclick="openEditAppt({{ a.id }})" title="تعديل">
+          <i class="fas fa-pen"></i>
+        </button>
+        {% if not a.patient_id %}
+          <button class="btn btn-xs btn-primary"
+                  onclick="openRegisterGuest({{ a.id }}, '{{ a.patient_name|e }}', '{{ a.patient_phone|e }}')" title="تسجيل كمريض">
+            <i class="fas fa-user-plus"></i>
+          </button>
+        {% endif %}
+        {% if a.status == 'scheduled' %}
+          <button class="btn btn-xs btn-success"
+                  onclick="updateStatus({{ a.id }},'completed')" title="مكتمل">
+            <i class="fas fa-check"></i>
+          </button>
+          <button class="btn btn-xs btn-secondary"
+                  onclick="updateStatus({{ a.id }},'no_show')" title="لم يحضر">
+            <i class="fas fa-user-times"></i>
+          </button>
+          <button class="btn btn-xs btn-danger"
+                  onclick="updateStatus({{ a.id }},'cancelled')" title="إلغاء">
+            <i class="fas fa-ban"></i>
+          </button>
+        {% endif %}
+        <button class="btn btn-xs btn-danger"
+                onclick="deleteAppt({{ a.id }})" title="حذف">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-state"><i class="fas fa-calendar-times"></i> لا توجد مواعيد لهذا اليوم</p>
+{% endif %}

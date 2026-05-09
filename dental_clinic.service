@@ -1,0 +1,17 @@
+[Unit]
+Description=Dental Clinic Flask App
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/dental_clinic
+Environment="PATH=/root/dental_clinic/.venv/bin"
+ExecStart=/root/dental_clinic/.venv/bin/gunicorn -c gunicorn.conf.py app:app
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

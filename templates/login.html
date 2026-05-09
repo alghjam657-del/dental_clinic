@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول - عيادة د. علي حسين</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ── صفحة الدخول المحسّنة ────────────────────────────── */
+    .login-body {
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 60%, #0d1117 100%);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* الجانب الأيمن - معلومات العيادة */
+    .login-side {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 60px 70px;
+      position: relative;
+      z-index: 2;
+    }
+    .login-side-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99,102,241,0.2);
+      border: 1px solid rgba(99,102,241,0.4);
+      color: #a5b4fc;
+      padding: 7px 18px;
+      border-radius: 30px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 28px;
+      backdrop-filter: blur(8px);
+    }
+    .login-side-badge i { font-size: 0.75rem; }
+    .login-side h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+    .login-side h1 span {
+      background: linear-gradient(135deg, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-side-subtitle {
+      color: #8b8db8;
+      font-size: 1rem;
+      margin-bottom: 40px;
+      line-height: 1.7;
+      max-width: 380px;
+    }
+    .login-features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .login-feature {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #9ca3c8;
+      font-size: 0.88rem;
+    }
+    .login-feature-icon {
+      width: 38px;
+      height: 38px;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #818cf8;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    /* الجانب الأيسر - نموذج الدخول */
+    .login-panel {
+      width: 460px;
+      min-height: 100vh;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 50px 44px;
+      position: relative;
+      z-index: 2;
+      box-shadow: -20px 0 60px rgba(0,0,0,0.3);
+    }
+    .login-panel-header {
+      margin-bottom: 36px;
+    }
+    .login-panel-logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .login-panel-logo-icon {
+      width: 54px;
+      height: 54px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(99,102,241,0.4);
+      flex-shrink: 0;
+    }
+    .login-panel-logo-text { line-height: 1.3; }
+    .login-panel-logo-text strong {
+      display: block;
+      font-size: 1rem;
+      color: #1a1a2e;
+      font-weight: 800;
+    }
+    .login-panel-logo-text span {
+      font-size: 0.76rem;
+      color: #6b7280;
+    }
+    .login-panel-header h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+    .login-panel-header p {
+      color: #6b7280;
+      font-size: 0.88rem;
+    }
+    .login-panel .form-group {
+      margin-bottom: 18px;
+    }
+    .login-panel .form-group label {
+      font-size: 0.83rem;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 7px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .login-panel .form-group label i { color: #6366f1; }
+    .login-panel .form-group input {
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      border: 1.5px solid #e5e7f0;
+      border-radius: 10px;
+      background: #f9faff;
+      transition: all 0.2s;
+      width: 100%;
+      font-family: inherit;
+      color: #1a1a2e;
+    }
+    .login-panel .form-group input:focus {
+      outline: none;
+      border-color: #6366f1;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+    }
+    .login-panel .password-wrapper { position: relative; }
+    .login-panel .toggle-password {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #9ca3af;
+      transition: color 0.2s;
+      padding: 4px;
+    }
+    .login-panel .toggle-password:hover { color: #6366f1; }
+    .login-submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+      transition: all 0.25s;
+      box-shadow: 0 6px 20px rgba(99,102,241,0.35);
+      font-family: inherit;
+    }
+    .login-submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(99,102,241,0.45);
+    }
+    .login-hint-box {
+      margin-top: 20px;
+      padding: 12px 16px;
+      background: #f0f2ff;
+      border-radius: 10px;
+      border: 1px dashed #c7d2fe;
+      font-size: 0.79rem;
+      color: #6b7280;
+      text-align: center;
+      line-height: 1.8;
+    }
+    .login-hint-box strong { color: #4338ca; }
+    .login-panel-footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #f0f0f0;
+      text-align: center;
+      font-size: 0.78rem;
+      color: #9ca3af;
+    }
+
+    /* الكرات الزخرفية المتحركة */
+    .login-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: 0.12;
+      pointer-events: none;
+    }
+    .blob-1 { width:450px;height:450px;background:#6366f1;top:-80px;right:-80px;animation:blobFloat 9s ease-in-out infinite; }
+    .blob-2 { width:350px;height:350px;background:#8b5cf6;bottom:-60px;left:20%;animation:blobFloat 12s ease-in-out infinite reverse; }
+    .blob-3 { width:250px;height:250px;background:#06b6d4;top:40%;left:35%;animation:blobFloat 7s ease-in-out infinite 3s; }
+
+    /* أيقونة السن الكبيرة الشفافة */
+    .login-tooth-bg {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 460px;
+      height: 460px;
+      opacity: 1;
+      pointer-events: none;
+      z-index: 1;
+      animation: toothFloat 9s ease-in-out infinite;
+      filter: drop-shadow(0 0 40px rgba(129,140,248,0.35)) drop-shadow(0 0 80px rgba(192,132,252,0.2));
+    }
+    @keyframes toothFloat {
+      0%,100% { transform: translateX(-50%) translateY(0) rotate(-3deg); }
+      50% { transform: translateX(-50%) translateY(-22px) rotate(3deg); }
+    }
+    @keyframes blobFloat {
+      0%,100% { transform: translate(0,0) scale(1); }
+      50% { transform: translate(25px,-25px) scale(1.08); }
+    }
+
+    /* شبكة النقاط الخلفية */
+    .login-grid {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(99,102,241,0.15) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: 0.4;
+      z-index: 1;
+    }
+
+    @media (max-width: 900px) {
+      .login-body {
+        align-items: flex-start;
+        justify-content: center;
+        padding: 14px;
+        background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+      }
+      .login-grid { opacity: 0.22; }
+      .login-blob { display: none; }
+      .login-side { display: none; }
+
+      .login-panel {
+        width: 100%;
+        min-height: auto;
+        max-width: 560px;
+        margin: 68px auto 10px;
+        padding: 22px 16px 18px;
+        border-radius: 22px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      }
+
+      .login-panel-logo {
+        margin-bottom: 18px;
+        gap: 10px;
+      }
+      .login-panel-logo-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        font-size: 1.15rem;
+      }
+      .login-panel-logo-text strong {
+        font-size: 0.92rem;
+      }
+      .login-panel-logo-text span {
+        font-size: 0.72rem;
+      }
+
+      .login-panel-header {
+        margin-bottom: 16px;
+      }
+      .login-panel-header h2 {
+        font-size: 1.28rem;
+      }
+      .login-panel-header p {
+        font-size: 0.84rem;
+      }
+
+      .login-panel .form-group {
+        margin-bottom: 12px;
+      }
+      .login-panel .form-group label {
+        font-size: 0.8rem;
+      }
+      .login-panel .form-group input {
+        height: 46px;
+        padding: 10px 13px;
+        font-size: 0.9rem;
+        border-radius: 11px;
+      }
+
+      .login-submit-btn {
+        height: 48px;
+        border-radius: 11px;
+        font-size: 0.95rem;
+        margin-top: 6px;
+      }
+
+      .login-panel-footer {
+        margin-top: 18px;
+        padding-top: 14px;
+        font-size: 0.74rem;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .login-body {
+        padding: 10px;
+      }
+      .login-panel {
+        margin-top: 58px;
+        border-radius: 18px;
+        padding: 16px 12px 14px;
+      }
+      .login-panel-header h2 {
+        font-size: 1.15rem;
+      }
+      .login-submit-btn {
+        height: 46px;
+      }
+    }
+  </style>
+</head>
+<body class="login-body">
+
+  <!-- خلفية زخرفية -->
+  <div class="login-grid"></div>
+  <div class="login-blob blob-1"></div>
+  <div class="login-blob blob-2"></div>
+  <div class="login-blob blob-3"></div>
+
+  <!-- الجانب الأيمن - معلومات -->
+  <div class="login-side" style="position:relative;overflow:hidden;">
+    <!-- سن شفاف زخرفي -->
+    <svg class="login-tooth-bg" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="toothGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#c084fc" stop-opacity="0.08"/>
+        </linearGradient>
+        <linearGradient id="toothStroke" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.7"/>
+          <stop offset="100%" stop-color="#c084fc" stop-opacity="0.3"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- ملء داخلي -->
+      <path d="M100 12 C74 12 50 21 37 36 C24 51 20 67 20 82 C20 102 26 118 33 133 C40 148 44 163 48 180 C52 197 54 210 58 224 C60 230 63 235 68 235 C73 235 77 230 79 222 C83 210 85 194 91 182 C94 175 97 171 100 171 C103 171 106 175 109 182 C115 194 117 210 121 222 C123 230 127 235 132 235 C137 235 140 230 142 224 C146 210 148 197 152 180 C156 163 160 148 167 133 C174 118 180 102 180 82 C180 67 176 51 163 36 C150 21 126 12 100 12 Z" fill="url(#toothGrad)"/>
+
+      <!-- حدود السن الرئيسية مضيئة -->
+      <path d="M100 12 C74 12 50 21 37 36 C24 51 20 67 20 82 C20 102 26 118 33 133 C40 148 44 163 48 180 C52 197 54 210 58 224 C60 230 63 235 68 235 C73 235 77 230 79 222 C83 210 85 194 91 182 C94 175 97 171 100 171 C103 171 106 175 109 182 C115 194 117 210 121 222 C123 230 127 235 132 235 C137 235 140 230 142 224 C146 210 148 197 152 180 C156 163 160 148 167 133 C174 118 180 102 180 82 C180 67 176 51 163 36 C150 21 126 12 100 12 Z" stroke="url(#toothStroke)" stroke-width="1.8" fill="none" filter="url(#glow)"/>
+
+      <!-- بريق علوي أيسر -->
+      <path d="M55 45 Q68 32 85 30" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <!-- بريق علوي أيمن -->
+      <path d="M95 22 Q108 20 118 26" stroke="rgba(255,255,255,0.15)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+
+      <!-- خط الجذرين -->
+      <path d="M79 222 C76 228 70 235 68 235" stroke="rgba(165,180,252,0.25)" stroke-width="1.2" fill="none"/>
+      <path d="M121 222 C124 228 130 235 132 235" stroke="rgba(165,180,252,0.25)" stroke-width="1.2" fill="none"/>
+    </svg>
+    </svg>
+    <div class="login-side-badge">
+      <i class="fas fa-shield-halved"></i>
+      نظام إدارة طبي متكامل
+    </div>
+    <h1>
+      عيادة<br>
+      <span>د. علي حسين</span>
+    </h1>
+    <p class="login-side-subtitle">
+      منصة إدارة متكاملة لعيادات الأسنان — تنظيم المرضى، المواعيد، السجلات الطبية والمالية في مكان واحد.
+    </p>
+    <div class="login-features">
+      <div class="login-feature">
+        <div class="login-feature-icon"><i class="fas fa-users"></i></div>
+        <span>إدارة سجلات المرضى بشكل كامل</span>
+      </div>
+      <div class="login-feature">
+        <div class="login-feature-icon"><i class="fas fa-calendar-check"></i></div>
+        <span>جدولة المواعيد والمتابعات</span>
+      </div>
+      <div class="login-feature">
+        <div class="login-feature-icon"><i class="fas fa-file-medical"></i></div>
+        <span>السجلات الطبية والتشخيصات</span>
+      </div>
+      <div class="login-feature">
+        <div class="login-feature-icon"><i class="fas fa-layer-group"></i></div>
+        <span>نظام الأقساط والمدفوعات</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- الجانب الأيسر - نموذج الدخول -->
+  <div class="login-panel">
+    <div class="login-panel-logo">
+      <div class="login-panel-logo-icon">
+        <i class="fas fa-tooth"></i>
+      </div>
+      <div class="login-panel-logo-text">
+        <strong>عيادة د. علي حسين</strong>
+        <span>نظام الإدارة الداخلي</span>
+      </div>
+    </div>
+
+    <div class="login-panel-header">
+      <h2>مرحباً بك 👋</h2>
+      <p>سجّل دخولك للوصول إلى لوحة التحكم</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}" style="margin-bottom:16px">
+            <i class="fas fa-exclamation-circle"></i> {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}">
+      <div class="form-group">
+        <label><i class="fas fa-user"></i> اسم المستخدم</label>
+        <input type="text" name="username" placeholder="أدخل اسم المستخدم"
+               required autocomplete="username">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      </div>
+
+      <div class="form-group">
+        <label><i class="fas fa-lock"></i> كلمة المرور</label>
+        <div class="password-wrapper">
+          <input type="password" name="password" id="loginPassword"
+                 placeholder="أدخل كلمة المرور" required autocomplete="current-password">
+          <button type="button" class="toggle-password"
+                  onclick="togglePassword('loginPassword', this)">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="login-submit-btn">
+        <i class="fas fa-sign-in-alt"></i>
+        تسجيل الدخول
+      </button>
+    </form>
+
+    <div class="login-panel-footer">
+      عيادة د. علي حسين &copy; {{ 2026 }} — جميع الحقوق محفوظة
+    </div>
+  </div>
+
+  <script>
+    function togglePassword(fieldId, btn) {
+      const field = document.getElementById(fieldId);
+      const icon  = btn.querySelector('i');
+      if (field.type === 'password') {
+        field.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+      } else {
+        field.type = 'password';
+        icon.className = 'fas fa-eye';
+      }
+    }
+  </script>
+</body>
+</html>

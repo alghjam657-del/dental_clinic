@@ -1,0 +1,756 @@
+{% extends 'base.html' %}
+{% block title %}الإعدادات{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="fas fa-cog"></i> الإعدادات</h1>
+    <p class="page-subtitle">إدارة إعدادات النظام والعيادة</p>
+  </div>
+</div>
+
+{% set tab_labels = {
+  'clinic': 'بيانات العيادة',
+  'users': 'المستخدمون والصلاحيات',
+  'patients': 'إعدادات المرضى',
+  'appointments': 'إعدادات المواعيد',
+  'finance': 'المالية والأقساط',
+  'medical': 'السجلات الطبية',
+  'notifications': 'الإشعارات والتنبيهات',
+  'security': 'الأمان والنسخ الاحتياطي',
+  'interface': 'إعدادات الواجهة',
+  'activitylog': 'سجل النشاطات'
+} %}
+{% set role_labels = {
+  'admin': 'مدير النظام',
+  'doctor': 'طبيب',
+  'reception': 'استقبال',
+  'accountant': 'محاسب',
+  'staff': 'موظف'
+} %}
+
+<section class="settings-hero">
+  <div class="settings-hero-main">
+    <div class="settings-hero-icon"><i class="fas fa-sliders-h"></i></div>
+    <div>
+      <h3>مركز إعدادات العيادة</h3>
+      <p>كل تبويب يحتوي إعدادات مخصصة، ويتم حفظ التعديلات مباشرة في قاعدة البيانات.</p>
+    </div>
+  </div>
+  <div class="settings-hero-chips">
+    <span class="settings-hero-chip"><i class="fas fa-layer-group"></i> التبويب الحالي: {{ tab_labels.get(active_tab, active_tab) }}</span>
+    <span class="settings-hero-chip"><i class="fas fa-user-shield"></i> صلاحية الدخول: {{ role_labels.get(session.role, session.role) }}</span>
+  </div>
+</section>
+
+<div class="settings-layout">
+
+  <!-- ─── القائمة الجانبية للإعدادات ─── -->
+  <aside class="settings-sidebar">
+    <nav class="settings-nav">
+      <a href="?tab=clinic"         class="settings-nav-item {% if active_tab=='clinic' %}active{% endif %}">
+        <i class="fas fa-hospital"></i> بيانات العيادة
+      </a>
+      <a href="?tab=users"          class="settings-nav-item {% if active_tab=='users' %}active{% endif %}">
+        <i class="fas fa-users-cog"></i> المستخدمون والصلاحيات
+      </a>
+      <a href="?tab=patients"       class="settings-nav-item {% if active_tab=='patients' %}active{% endif %}">
+        <i class="fas fa-user-injured"></i> إعدادات المرضى
+      </a>
+      <a href="?tab=appointments"   class="settings-nav-item {% if active_tab=='appointments' %}active{% endif %}">
+        <i class="fas fa-calendar-alt"></i> إعدادات المواعيد
+      </a>
+      <a href="?tab=finance"        class="settings-nav-item {% if active_tab=='finance' %}active{% endif %}">
+        <i class="fas fa-money-bill-wave"></i> المالية والأقساط
+      </a>
+      <a href="?tab=medical"        class="settings-nav-item {% if active_tab=='medical' %}active{% endif %}">
+        <i class="fas fa-notes-medical"></i> السجلات الطبية
+      </a>
+      <a href="?tab=notifications"  class="settings-nav-item {% if active_tab=='notifications' %}active{% endif %}">
+        <i class="fas fa-bell"></i> الإشعارات والتنبيهات
+      </a>
+      <a href="?tab=security"       class="settings-nav-item {% if active_tab=='security' %}active{% endif %}">
+        <i class="fas fa-shield-alt"></i> الأمان والنسخ الاحتياطي
+      </a>
+      <a href="?tab=interface"      class="settings-nav-item {% if active_tab=='interface' %}active{% endif %}">
+        <i class="fas fa-paint-brush"></i> إعدادات الواجهة
+      </a>
+      <a href="?tab=activitylog"    class="settings-nav-item {% if active_tab=='activitylog' %}active{% endif %}">
+        <i class="fas fa-history"></i> سجل النشاطات
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ─── محتوى التبويبات ─── -->
+  <div class="settings-content">
+
+    <!-- ══ بيانات العيادة ══ -->
+    {% if active_tab == 'clinic' %}
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <i class="fas fa-hospital"></i>
+        <h2>بيانات العيادة</h2>
+      </div>
+      <form method="post" action="{{ url_for('settings.save_clinic') }}">
+        <div class="settings-grid-2">
+          <div class="form-group">
+            <label>اسم العيادة</label>
+            <input type="text" name="clinic_name" class="form-control"
+                   value="{{ cfg.get('clinic_name','') }}" required>
+          </div>
+          <div class="form-group">
+            <label>اسم الطبيب</label>
+            <input type="text" name="doctor_name" class="form-control"
+                   value="{{ cfg.get('doctor_name','') }}" required>
+          </div>
+          <div class="form-group">
+            <label>رقم الهاتف</label>
+            <input type="text" name="clinic_phone" class="form-control"
+                   value="{{ cfg.get('clinic_phone','') }}"
+                   placeholder="07XXXXXXXXX">
+          </div>
+          <div class="form-group">
+            <label>البريد الإلكتروني</label>
+            <input type="email" name="clinic_email" class="form-control"
+                   value="{{ cfg.get('clinic_email','') }}">
+          </div>
+          <div class="form-group settings-full-col">
+            <label>العنوان</label>
+            <input type="text" name="clinic_address" class="form-control"
+                   value="{{ cfg.get('clinic_address','') }}">
+          </div>
+          <div class="form-group settings-full-col">
+            <label>أوقات الدوام</label>
+            <input type="text" name="clinic_hours" class="form-control"
+                   value="{{ cfg.get('clinic_hours','') }}"
+                   placeholder="السبت - الخميس: 9 صباحاً - 5 مساءً">
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> حفظ بيانات العيادة
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ══ معاينة العيادة ══ -->
+    <div class="settings-card settings-preview-card">
+      <div class="settings-card-header">
+        <i class="fas fa-eye"></i>
+        <h2>معاينة</h2>
+      </div>
+      <div class="clinic-preview">
+        <div class="clinic-preview-logo"><i class="fas fa-tooth"></i></div>
+        <div class="clinic-preview-name">{{ cfg.get('clinic_name','عيادة طب الأسنان') }}</div>
+        <div class="clinic-preview-doctor">{{ cfg.get('doctor_name','') }}</div>
+        <div class="clinic-preview-info">
+          <span><i class="fas fa-phone"></i> {{ cfg.get('clinic_phone','') }}</span>
+          <span><i class="fas fa-map-marker-alt"></i> {{ cfg.get('clinic_address','') }}</span>
+          <span><i class="fas fa-clock"></i> {{ cfg.get('clinic_hours','') }}</span>
+        </div>
+      </div>
+    </div>
+
+    {% endif %}
+
+    <!-- ══ المستخدمون والصلاحيات ══ -->
+    {% if active_tab == 'users' %}
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <i class="fas fa-users-cog"></i>
+        <h2>المستخدمون والصلاحيات</h2>
+        {% if session.role == 'admin' %}
+        <button class="btn btn-primary btn-sm mr-auto" onclick="openModal('addUserModal')">
+          <i class="fas fa-plus"></i> مستخدم جديد
+        </button>
+        {% endif %}
+      </div>
+
+      <!-- جدول المستخدمين -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>اسم المستخدم</th>
+              <th>الاسم الكامل</th>
+              <th>الدور</th>
+              <th>تاريخ الإنشاء</th>
+              {% if session.role == 'admin' %}<th>إجراءات</th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td><code>{{ u.username }}</code></td>
+              <td>{{ u.full_name }}</td>
+              <td>
+                {% set role_labels = {'admin':'مدير النظام','reception':'استقبال','accountant':'محاسب','doctor':'طبيب','staff':'موظف'} %}
+                <span class="badge badge-{{ 'primary' if u.role=='admin' else 'secondary' }}">
+                  {{ role_labels.get(u.role, u.role) }}
+                </span>
+              </td>
+              <td>{{ u.created_at[:10] }}</td>
+              {% if session.role == 'admin' %}
+              <td>
+                <button class="btn btn-sm btn-warning"
+                        onclick="loadEditUser({{ u.id }}, '{{ u.full_name }}', '{{ u.role }}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                {% if u.username != 'admin' and u.id != session.user_id %}
+                <form method="post" action="{{ url_for('settings.delete_user', uid=u.id) }}"
+                      style="display:inline"
+                      onsubmit="return confirm('حذف المستخدم {{ u.full_name }}؟')">
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- صلاحيات الأدوار -->
+      <div class="settings-card-header roles-header" style="margin-top:2rem">
+        <div class="roles-header-title">
+          <i class="fas fa-lock"></i>
+          <h3>صلاحيات الأدوار</h3>
+        </div>
+        <div class="roles-legend">
+          <span class="perm-chip perm-chip-allow"><i class="fas fa-check-circle"></i> مسموح</span>
+          <span class="perm-chip perm-chip-deny"><i class="fas fa-times-circle"></i> غير مسموح</span>
+        </div>
+      </div>
+
+      <p class="roles-subtitle">نظرة سريعة على حدود كل دور داخل النظام لتسهيل إدارة الصلاحيات.</p>
+
+      <div class="roles-grid">
+        <article class="role-card role-admin">
+          <div class="role-card-top">
+            <div class="role-title"><i class="fas fa-crown"></i> مدير النظام</div>
+            <span class="role-badge">وصول كامل</span>
+          </div>
+          <ul class="role-perms">
+            <li class="perm-allow"><i class="fas fa-check-circle"></i> كامل الصلاحيات</li>
+            <li class="perm-allow"><i class="fas fa-check-circle"></i> إدارة المستخدمين والأدوار</li>
+            <li class="perm-allow"><i class="fas fa-check-circle"></i> الإعدادات والنسخ الاحتياطي</li>
+          </ul>
+        </article>
+
+        <article class="role-card role-doctor">
+          <div class="role-card-top">
+            <div class="role-title"><i class="fas fa-user-md"></i> طبيب</div>
+            <span class="role-badge">طبي</span>
+          </div>
+          <ul class="role-perms">
+            <li class="perm-allow"><i class="fas fa-check-circle"></i> السجلات الطبية</li>
+            <li class="perm-allow"><i class="fas fa-check-circle"></i> المرضى والمواعيد</li>
+            <li class="perm-deny"><i class="fas fa-times-circle"></i> المالية والإعدادات</li>
+          </ul>
+        </article>
+
+        <article class="role-card role-reception">
+          <div class="role-card-top">
+            <div class="role-title"><i class="fas fa-concierge-bell"></i> استقبال</div>
+            <span class="role-badge">تشغيلي</span>
+          </div>
+          <ul class="role-perms">
+            <li class="perm-allow"><i class="fas fa-check-circle"></i> إدارة المرضى والمواعيد</li>
+            <li class="perm-deny"><i class="fas fa-times-circle"></i> المالية والأقساط</li>
+            <li class="perm-deny"><i class="fas fa-times-circle"></i> الإعدادات والسجلات الطبية</li>
+          </ul>
+        </article>
+
+        <article class="role-card role-accountant">
+          <div class="role-card-top">
+            <div class="role-title"><i class="fas fa-calculator"></i> محاسب</div>
+            <span class="role-badge">مالي</span>
+          </div>
+          <ul class="role-perms">
+            <li class="perm-allow"><i class="fas fa-check-circle"></i> المالية والأقساط</li>
+            <li class="perm-allow"><i class="fas fa-check-circle"></i> المرضى والمواعيد</li>
+            <li class="perm-deny"><i class="fas fa-times-circle"></i> السجلات الطبية والإعدادات</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ══ إعدادات المرضى ══ -->
+    {% if active_tab == 'patients' %}
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <i class="fas fa-user-injured"></i>
+        <h2>إعدادات المرضى</h2>
+      </div>
+      <form method="post" action="{{ url_for('settings.save_patients') }}">
+        <div class="settings-grid-2">
+          <div class="form-group">
+            <label>تنسيق رقم الهاتف</label>
+            <input type="text" name="phone_format" class="form-control"
+                   value="{{ cfg.get('phone_format','07XXXXXXXXX') }}"
+                   placeholder="07XXXXXXXXX">
+            <small class="form-hint">مثال: 07XXXXXXXXX للرقم العراقي</small>
+          </div>
+          <div class="form-group">
+            <label>رمز العملة</label>
+            <input type="text" name="currency_symbol" class="form-control"
+                   value="{{ cfg.get('currency_symbol','د.ع') }}"
+                   placeholder="د.ع">
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> حفظ إعدادات المرضى
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- ══ إعدادات المواعيد ══ -->
+    {% if active_tab == 'appointments' %}
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <i class="fas fa-calendar-alt"></i>
+        <h2>إعدادات المواعيد</h2>
+      </div>
+      <form method="post" action="{{ url_for('settings.save_appointments') }}">
+        <div class="settings-grid-2">
+          <div class="form-group">
+            <label>مدة الموعد الافتراضية (بالدقائق)</label>
+            <input type="number" name="appointment_duration" class="form-control"
+                   value="{{ cfg.get('appointment_duration','30') }}" min="5" max="240">
+          </div>
+          <div class="form-group">
+            <label>وقت بداية الدوام</label>
+            <input type="time" name="work_start_time" class="form-control"
+                   value="{{ cfg.get('work_start_time','09:00') }}">
+          </div>
+          <div class="form-group">
+            <label>وقت انتهاء الدوام</label>
+            <input type="time" name="work_end_time" class="form-control"
+                   value="{{ cfg.get('work_end_time','17:00') }}">
+          </div>
+          <div class="form-group settings-full-col">
+            <label>أيام العمل</label>
+            <div class="days-picker">
+              {% set work_days = cfg.get('working_days','').split(',') %}
+              {% for day in ['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'] %}
+              <label class="day-toggle">
+                <input type="checkbox" name="working_days_check" value="{{ day }}"
+                       {% if day in work_days %}checked{% endif %}
+                       onchange="updateWorkingDays()">
+                <span>{{ day }}</span>
+              </label>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="working_days" id="workingDaysInput"
+                   value="{{ cfg.get('working_days','') }}">
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> حفظ إعدادات المواعيد
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- ══ إعدادات المالية والأقساط ══ -->
+    {% if active_tab == 'finance' %}
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <i class="fas fa-money-bill-wave"></i>
+        <h2>إعدادات المالية والأقساط</h2>
+      </div>
+      <form method="post" action="{{ url_for('settings.save_finance') }}">
+        <div class="settings-grid-2">
+          <div class="form-group">
+            <label>رمز العملة</label>
+            <input type="text" name="currency_symbol" class="form-control"
+                   value="{{ cfg.get('currency_symbol','د.ع') }}">
+          </div>
+          <div class="form-group">
+            <label>عدد الأقساط الافتراضي</label>
+            <input type="number" name="default_installments" class="form-control"
+                   value="{{ cfg.get('default_installments','3') }}" min="1" max="60">
+          </div>
+          <div class="form-group">
+            <label>تنبيه الأقساط المتأخرة (بعد كم يوم)</label>
+            <input type="number" name="overdue_alert_days" class="form-control"
+                   value="{{ cfg.get('overdue_alert_days','7') }}" min="1">
+          </div>
+          <div class="form-group settings-full-col">
+            <label>طرق الدفع المتاحة (مفصولة بفاصلة)</label>
+            <input type="text" name="payment_methods" class="form-control"
+                   value="{{ cfg.get('payment_methods','نقدي,بطاقة,تحويل بنكي') }}"
+                   placeholder="نقدي,بطاقة,تحويل بنكي">
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> حفظ إعدادات المالية
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- ══ إعدادات السجلات الطبية ══ -->
+    {% if active_tab == 'medical' %}
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <i class="fas fa-notes-medical"></i>
+        <h2>إعدادات السجلات الطبية</h2>
+      </div>
+      <form method="post" action="{{ url_for('settings.save_medical') }}">
+        <div class="form-group">
+          <label>التشخيصات الشائعة (مفصولة بفاصلة)</label>
+          <textarea name="common_diagnoses" class="form-control" rows="4"
+                    placeholder="تسوس,التهاب لثة,كسر سن...">{{ cfg.get('common_diagnoses','') }}</textarea>
+          <small class="form-hint">ستظهر كاقتراحات عند إضافة سجل طبي</small>
+        </div>
+        <div class="form-group">
+          <label>العلاجات الشائعة (مفصولة بفاصلة)</label>
+          <textarea name="common_treatments" class="form-control" rows="4"
+                    placeholder="حشو,تنظيف,خلع...">{{ cfg.get('common_treatments','') }}</textarea>
+        </div>
+
+        <!-- معاينة الكلمات -->
+        {% set diag_list = cfg.get('common_diagnoses','').split(',') %}
+        {% set treat_list = cfg.get('common_treatments','').split(',') %}
+        {% if diag_list or treat_list %}
+        <div class="tags-preview">
+          <div class="tags-group">
+            <div class="tags-label">التشخيصات:</div>
+            <div class="tags-list">
+              {% for d in diag_list if d.strip() %}
+              <span class="tag tag-blue">{{ d.strip() }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="tags-group">
+            <div class="tags-label">العلاجات:</div>
+            <div class="tags-list">
+              {% for t in treat_list if t.strip() %}
+              <span class="tag tag-green">{{ t.strip() }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="settings-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> حفظ إعدادات السجلات
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- ══ الإشعارات والتنبيهات ══ -->
+    {% if active_tab == 'notifications' %}
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <i class="fas fa-bell"></i>
+        <h2>الإشعارات والتنبيهات</h2>
+      </div>
+      <form method="post" action="{{ url_for('settings.save_notifications') }}">
+        <div class="toggles-list">
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-title">تنبيهات مواعيد اليوم</div>
+              <div class="toggle-desc">إظهار تنبيه بمواعيد اليوم عند فتح النظام</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notify_appointments"
+                     {% if cfg.get('notify_appointments','1') == '1' %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-title">تنبيهات الأقساط المتأخرة</div>
+              <div class="toggle-desc">تنبيه عند وجود أقساط متأخرة للمرضى</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notify_installments"
+                     {% if cfg.get('notify_installments','1') == '1' %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-title">تنبيهات متابعة المرضى</div>
+              <div class="toggle-desc">تذكير بالمرضى الذين يحتاجون متابعة دورية</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notify_followup"
+                     {% if cfg.get('notify_followup','1') == '1' %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> حفظ إعدادات الإشعارات
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- ══ الأمان والنسخ الاحتياطي ══ -->
+    {% if active_tab == 'security' %}
+    <div class="settings-grid-2-cards">
+
+      <!-- تغيير كلمة المرور -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <i class="fas fa-key"></i>
+          <h2>تغيير كلمة المرور</h2>
+        </div>
+        <form method="post" action="{{ url_for('settings.change_password') }}">
+          <div class="form-group">
+            <label>كلمة المرور الحالية</label>
+            <input type="password" name="old_password" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>كلمة المرور الجديدة</label>
+            <input type="password" name="new_password" class="form-control"
+                   minlength="6" required>
+          </div>
+          <div class="form-group">
+            <label>تأكيد كلمة المرور الجديدة</label>
+            <input type="password" name="confirm_password" class="form-control"
+                   minlength="6" required>
+          </div>
+          <div class="settings-actions">
+            <button type="submit" class="btn btn-warning">
+              <i class="fas fa-key"></i> تغيير كلمة المرور
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- النسخ الاحتياطي -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <i class="fas fa-database"></i>
+          <h2>النسخ الاحتياطي</h2>
+        </div>
+        <div class="backup-info">
+          <div class="backup-icon"><i class="fas fa-shield-alt"></i></div>
+          <p>يتم حفظ النسخة الاحتياطية لقاعدة البيانات في مجلد <code>backups/</code> داخل مجلد التطبيق.</p>
+          <p>النسخة الاحتياطية تحتوي على كامل بيانات النظام: المرضى، المواعيد، السجلات الطبية، والمدفوعات.</p>
+        </div>
+        {% if session.role == 'admin' %}
+        <form method="post" action="{{ url_for('settings.backup') }}"
+              onsubmit="return confirm('إنشاء نسخة احتياطية الآن؟')">
+          <div class="settings-actions">
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-download"></i> إنشاء نسخة احتياطية الآن
+            </button>
+          </div>
+        </form>
+        {% else %}
+        <div class="alert alert-warning">يحتاج هذا الإجراء صلاحية مدير النظام</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ══ إعدادات الواجهة ══ -->
+    {% if active_tab == 'interface' %}
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <i class="fas fa-paint-brush"></i>
+        <h2>إعدادات الواجهة</h2>
+      </div>
+      <form method="post" action="{{ url_for('settings.save_interface') }}">
+        <div class="settings-grid-2">
+          <div class="form-group">
+            <label>تنسيق التاريخ</label>
+            <select name="date_format" class="form-control">
+              <option value="YYYY-MM-DD" {% if cfg.get('date_format')=='YYYY-MM-DD' %}selected{% endif %}>YYYY-MM-DD</option>
+              <option value="DD/MM/YYYY" {% if cfg.get('date_format')=='DD/MM/YYYY' %}selected{% endif %}>DD/MM/YYYY</option>
+              <option value="MM/DD/YYYY" {% if cfg.get('date_format')=='MM/DD/YYYY' %}selected{% endif %}>MM/DD/YYYY</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>حجم الخط</label>
+            <select name="font_size" class="form-control">
+              <option value="small"  {% if cfg.get('font_size')=='small'  %}selected{% endif %}>صغير</option>
+              <option value="medium" {% if cfg.get('font_size','medium')=='medium' %}selected{% endif %}>متوسط</option>
+              <option value="large"  {% if cfg.get('font_size')=='large'  %}selected{% endif %}>كبير</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>اللغة</label>
+            <select name="language" class="form-control">
+              <option value="ar" {% if cfg.get('language','ar')=='ar' %}selected{% endif %}>العربية</option>
+              <option value="en" {% if cfg.get('language')=='en' %}selected{% endif %}>English</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> حفظ إعدادات الواجهة
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- ══ سجل النشاطات ══ -->
+    {% if active_tab == 'activitylog' %}
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <i class="fas fa-history"></i>
+        <h2>سجل النشاطات</h2>
+        <span class="badge badge-secondary mr-auto">{{ logs|length }} سجل</span>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>المستخدم</th>
+              <th>الإجراء</th>
+              <th>التفاصيل</th>
+              <th>IP</th>
+              <th>التاريخ والوقت</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ log.username or '—' }}</td>
+              <td><span class="badge badge-primary">{{ log.action }}</span></td>
+              <td>{{ log.details or '—' }}</td>
+              <td><code>{{ log.ip_address or '—' }}</code></td>
+              <td>{{ log.created_at }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted">لا توجد سجلات بعد</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- end settings-content -->
+</div><!-- end settings-layout -->
+
+<!-- ─── مودال إضافة مستخدم ─── -->
+<div class="modal" id="addUserModal">
+  <div class="modal-backdrop" onclick="closeModal('addUserModal')"></div>
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-plus"></i> إضافة مستخدم جديد</h3>
+      <button class="modal-close" onclick="closeModal('addUserModal')">×</button>
+    </div>
+    <form method="post" action="{{ url_for('settings.add_user') }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>اسم المستخدم <span class="req">*</span></label>
+          <input type="text" name="username" class="form-control" required
+                 placeholder="username (إنجليزي فقط)">
+        </div>
+        <div class="form-group">
+          <label>الاسم الكامل <span class="req">*</span></label>
+          <input type="text" name="full_name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>كلمة المرور <span class="req">*</span></label>
+          <input type="password" name="password" class="form-control"
+                 minlength="6" required>
+        </div>
+        <div class="form-group">
+          <label>الدور</label>
+          <select name="role" class="form-control">
+            <option value="staff">موظف</option>
+            <option value="reception">استقبال</option>
+            <option value="accountant">محاسب</option>
+            <option value="doctor">طبيب</option>
+            <option value="admin">مدير النظام</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+                onclick="closeModal('addUserModal')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-user-plus"></i> إضافة المستخدم
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ─── مودال تعديل مستخدم ─── -->
+<div class="modal" id="editUserModal">
+  <div class="modal-backdrop" onclick="closeModal('editUserModal')"></div>
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-edit"></i> تعديل بيانات المستخدم</h3>
+      <button class="modal-close" onclick="closeModal('editUserModal')">×</button>
+    </div>
+    <form method="post" id="editUserForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>الاسم الكامل <span class="req">*</span></label>
+          <input type="text" name="full_name" id="editFullName" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>الدور</label>
+          <select name="role" id="editRole" class="form-control">
+            <option value="staff">موظف</option>
+            <option value="reception">استقبال</option>
+            <option value="accountant">محاسب</option>
+            <option value="doctor">طبيب</option>
+            <option value="admin">مدير النظام</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>كلمة المرور الجديدة <small class="text-muted">(اتركها فارغة للإبقاء على الحالية)</small></label>
+          <input type="password" name="password" class="form-control" minlength="6">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+                onclick="closeModal('editUserModal')">إلغاء</button>
+        <button type="submit" class="btn btn-warning">
+          <i class="fas fa-save"></i> حفظ التعديلات
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function loadEditUser(uid, fullName, role) {
+  document.getElementById('editFullName').value = fullName;
+  document.getElementById('editRole').value     = role;
+  document.getElementById('editUserForm').action = '/settings/users/' + uid + '/edit';
+  openModal('editUserModal');
+}
+
+function updateWorkingDays() {
+  const checked = [...document.querySelectorAll('input[name="working_days_check"]:checked')]
+    .map(cb => cb.value);
+  document.getElementById('workingDaysInput').value = checked.join(',');
+}
+</script>
+{% endblock %}

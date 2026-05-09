@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}المرضى{% endblock %}
+
+{% block content %}
+<style>
+.badge-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  border-radius: 50px;
+  padding: 8px 18px;
+  font-size: .9rem;
+  color: rgba(255,255,255,.85);
+  box-shadow: 0 2px 8px rgba(99,102,241,.35);
+}
+.badge-count strong {
+  background: rgba(255,255,255,.2);
+  color: #fff;
+  font-size: 1rem;
+  border-radius: 50px;
+  padding: 1px 10px;
+}
+</style>
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>
+      <div class="header-icon"><i class="fas fa-users"></i></div>
+      إدارة المرضى
+    </h2>
+    <p class="page-subtitle">قائمة جميع المرضى المسجلين في النظام</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:1rem">
+    <span class="badge-count">إجمالي المرضى: <strong>{{ patients|length }}</strong></span>
+    <a href="{{ url_for('patients.trash') }}" class="btn btn-outline-secondary" title="سلة المحذوفات">
+      🗑️ السلة
+    </a>
+    <button class="btn btn-primary" onclick="openModal('addPatientModal')">
+      <i class="fas fa-plus"></i> إضافة مريض
+    </button>
+  </div>
+</div>
+
+<!-- ─── شريط البحث ────────────────────────────────────────────────── -->
+<div class="search-bar">
+  <form method="GET" action="{{ url_for('patients.index') }}">
+    <div class="search-input-wrapper">
+      <i class="fas fa-search"></i>
+      <input type="text" name="q" value="{{ search }}" placeholder="بحث بالاسم أو رقم الهاتف أو رقم التسلسل...">
+      <button type="submit" class="btn btn-primary">بحث</button>
+      {% if search %}
+        <a href="{{ url_for('patients.index') }}" class="btn btn-outline">مسح</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- ─── جدول المرضى ───────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-body">
+    {% if patients %}
+    <table class="table table-hover" id="patientsTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>الاسم الكامل</th>
+          <th>الهاتف</th>
+          <th>الجنس</th>
+          <th>العمر</th>
+          <th>تاريخ الإضافة</th>
+          <th>الإجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in patients %}
+        <tr>
+          <td>{{ p.id }}</td>
+          <td>
+            <a href="{{ url_for('patients.profile', patient_id=p.id) }}" class="patient-link">
+              <i class="fas fa-user-circle"></i> {{ p.full_name }}
+            </a>
+          </td>
+          <td><a href="tel:{{ p.phone }}">{{ p.phone }}</a></td>
+          <td>{{ 'ذكر' if p.gender == 'male' else 'أنثى' }}</td>
+          <td>
+            {{ p.date_of_birth|calc_age if p.date_of_birth else '—' }}
+          </td>
+          <td>{{ p.created_at[:10] }}</td>
+          <td class="actions">
+            <a href="{{ url_for('patients.profile', patient_id=p.id) }}" class="btn btn-xs btn-info" title="عرض الملف">
+              <i class="fas fa-eye"></i>
+            </a>
+            <button class="btn btn-xs btn-warning" title="تعديل"
+                    onclick="editPatient({{ p.id }})">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-xs btn-danger" title="حذف"
+                    onclick="deletePatient({{ p.id }}, '{{ p.full_name }}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+      <p class="empty-state"><i class="fas fa-user-slash"></i>
+        {% if search %}لا توجد نتائج للبحث "{{ search }}"{% else %}لا يوجد مرضى بعد{% endif %}
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ─── Modal: إضافة مريض ─────────────────────────────────────────── -->
+<div id="addPatientModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><div class="modal-icon"><i class="fas fa-user-plus"></i></div> إضافة مريض جديد</h3>
+      <button class="modal-close" onclick="closeModal('addPatientModal')">×</button>
+    </div>
+    <form id="addPatientForm">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>الاسم الكامل *</label>
+            <input type="text" name="full_name" required placeholder="اسم المريض">
+          </div>
+          <div class="form-group">
+            <label>رقم الهاتف *</label>
+            <input type="tel" name="phone" required placeholder="07XXXXXXXXX" pattern="07[0-9]{9}" title="رقم عراقي: 07XXXXXXXXX">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>البريد الإلكتروني</label>
+            <input type="email" name="email" placeholder="example@email.com">
+          </div>
+          <div class="form-group">
+            <label>العمر</label>
+            <input type="number" name="date_of_birth" min="0" max="120" placeholder="مثال: 35">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>الجنس</label>
+            <select name="gender">
+              <option value="male">ذكر</option>
+              <option value="female">أنثى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>العنوان</label>
+            <input type="text" name="address" placeholder="المدينة / الحي">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea name="notes" rows="2" placeholder="أي ملاحظات إضافية..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('addPatientModal')">إلغاء</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ─── Modal: تعديل مريض ─────────────────────────────────────────── -->
+<div id="editPatientModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><div class="modal-icon"><i class="fas fa-user-edit"></i></div> تعديل بيانات المريض</h3>
+      <button class="modal-close" onclick="closeModal('editPatientModal')">×</button>
+    </div>
+    <form id="editPatientForm">
+      <input type="hidden" name="patient_id" id="editPatientId">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>الاسم الكامل *</label>
+            <input type="text" name="full_name" id="editFullName" required>
+          </div>
+          <div class="form-group">
+            <label>رقم الهاتف *</label>
+            <input type="tel" name="phone" id="editPhone" required placeholder="07XXXXXXXXX" pattern="07[0-9]{9}" title="رقم عراقي: 07XXXXXXXXX">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>البريد الإلكتروني</label>
+            <input type="email" name="email" id="editEmail">
+          </div>
+          <div class="form-group">
+            <label>العمر</label>
+            <input type="number" name="date_of_birth" id="editAge" min="0" max="120" placeholder="مثال: 35">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>الجنس</label>
+            <select name="gender" id="editGender">
+              <option value="male">ذكر</option>
+              <option value="female">أنثى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>العنوان</label>
+            <input type="text" name="address" id="editAddress">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea name="notes" id="editNotes" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editPatientModal')">إلغاء</button>
+        <button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> تحديث</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ─── إضافة مريض ────────────────────────────────────────────────────
+document.getElementById('addPatientForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const res = await apiPost('/patients/add', fd);
+  if (res.success) {
+    showToast(res.message, 'success');
+    closeModal('addPatientModal');
+    setTimeout(() => location.reload(), 700);
+  } else {
+    showToast(res.message, 'error');
+  }
+});
+
+// ─── تعديل مريض ────────────────────────────────────────────────────
+async function editPatient(id) {
+  const res = await fetch(`/patients/${id}`);
+  const data = await res.json();
+  if (!data.success) return showToast('خطأ في جلب البيانات', 'error');
+  const p = data.patient;
+  document.getElementById('editPatientId').value  = p.id;
+  document.getElementById('editFullName').value   = p.full_name;
+  document.getElementById('editPhone').value      = p.phone;
+  document.getElementById('editEmail').value      = p.email || '';
+  document.getElementById('editAge').value        = p.date_of_birth || '';
+  document.getElementById('editGender').value     = p.gender;
+  document.getElementById('editAddress').value    = p.address || '';
+  document.getElementById('editNotes').value      = p.notes || '';
+  openModal('editPatientModal');
+}
+
+document.getElementById('editPatientForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const id = fd.get('patient_id');
+  const res = await apiPost(`/patients/${id}/update`, fd);
+  if (res.success) {
+    showToast(res.message, 'success');
+    closeModal('editPatientModal');
+    setTimeout(() => location.reload(), 700);
+  } else {
+    showToast(res.message, 'error');
+  }
+});
+
+// ─── حذف مريض ──────────────────────────────────────────────────────
+async function deletePatient(id, name) {
+  if (!confirm(`هل أنت متأكد من حذف المريض "${name}"؟\nسيتم حذف جميع البيانات المرتبطة به.`)) return;
+  const res = await apiPost(`/patients/${id}/delete`, new FormData());
+  if (res.success) {
+    showToast(res.message, 'success');
+    setTimeout(() => location.reload(), 700);
+  } else {
+    showToast(res.message, 'error');
+  }
+}
+</script>
+{% endblock %}

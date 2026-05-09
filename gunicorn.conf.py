@@ -1,0 +1,9 @@
+bind = "127.0.0.1:8080"
+workers = 4
+threads = 4
+timeout = 120
+max_requests = 1000
+max_requests_jitter = 100
+accesslog = "/var/log/dental/gunicorn_access.log"
+errorlog = "/var/log/dental/gunicorn_error.log"
+loglevel = "info"

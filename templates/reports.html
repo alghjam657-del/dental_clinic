@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% block title %}التقارير{% endblock %}
+
+{% block content %}
+<style>
+.reports-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.compare-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  border: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.compare-icon {
+  width: 50px; height: 50px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.compare-info .ci-num { font-size: 1.5rem; font-weight: 700; }
+.compare-info .ci-lbl { font-size: .82rem; color: #64748b; }
+.compare-info .ci-sub { font-size: .78rem; color: #94a3b8; margin-top: 2px; }
+.change-badge {
+  margin-right: auto;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+.change-up   { background: #ecfdf5; color: #059669; }
+.change-down { background: #fef2f2; color: #dc2626; }
+.change-same { background: #f8fafc; color: #64748b; }
+
+@media (max-width: 680px) {
+  .reports-compare { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>
+      <div class="header-icon"><i class="fas fa-chart-bar"></i></div>
+      التقارير والإحصائيات
+    </h2>
+    <p class="page-subtitle">تحليل الإيرادات والمرضى والمواعيد</p>
+  </div>
+</div>
+
+<!-- ─── بطاقات الملخص ────────────────────────────────────────────── -->
+<div class="stats-grid">
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_income|fmt_num }}</span>
+      <span class="stat-label">إجمالي الإيرادات (د.ع)</span>
+    </div>
+  </div>
+  <div class="stat-card stat-orange">
+    <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_remaining|fmt_num }}</span>
+      <span class="stat-label">إجمالي الديون (د.ع)</span>
+    </div>
+  </div>
+  <div class="stat-card stat-blue">
+    <div class="stat-icon"><i class="fas fa-users"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_patients }}</span>
+      <span class="stat-label">إجمالي المرضى</span>
+    </div>
+  </div>
+  <div class="stat-card stat-purple">
+    <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_appts }}</span>
+      <span class="stat-label">إجمالي المواعيد</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── مقارنة الشهر الحالي بالماضي ─────────────────────────────── -->
+<div class="reports-compare">
+  {% set diff = income_this_month - income_last_month %}
+  {% set pct  = ((diff / income_last_month * 100) | round(1)) if income_last_month > 0 else 0 %}
+  <div class="compare-card">
+    <div class="compare-icon" style="background:#ecfdf5;color:#059669">
+      <i class="fas fa-coins"></i>
+    </div>
+    <div class="compare-info">
+      <div class="ci-num" style="color:#059669">{{ income_this_month|fmt_num }} د.ع</div>
+      <div class="ci-lbl">دخل هذا الشهر</div>
+      <div class="ci-sub">الشهر الماضي: {{ income_last_month|fmt_num }} د.ع</div>
+    </div>
+    {% if diff > 0 %}
+      <span class="change-badge change-up">▲ {{ pct }}%</span>
+    {% elif diff < 0 %}
+      <span class="change-badge change-down">▼ {{ (pct * -1) }}%</span>
+    {% else %}
+      <span class="change-badge change-same">= لا تغيير</span>
+    {% endif %}
+  </div>
+
+  <div class="compare-card">
+    <div class="compare-icon" style="background:#eff6ff;color:#4f46e5">
+      <i class="fas fa-chart-pie"></i>
+    </div>
+    <div class="compare-info">
+      <div class="ci-num" style="color:#4f46e5">{{ total_appts }}</div>
+      <div class="ci-lbl">إجمالي المواعيد</div>
+      <div class="ci-sub">
+        {% set completed_count = namespace(v=0) %}
+        {% for s in appt_stats %}{% if s.status == 'completed' %}{% set completed_count.v = s.cnt %}{% endif %}{% endfor %}
+        {{ completed_count.v }} مكتملة
+      </div>
+    </div>
+    {% set comp_pct = ((completed_count.v / total_appts * 100)|round(0)|int) if total_appts > 0 else 0 %}
+    <span class="change-badge change-up">{{ comp_pct }}% اكتمال</span>
+  </div>
+</div>
+
+<!-- ─── الرسوم البيانية ──────────────────────────────────────────── -->
+<div class="dashboard-grid">
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-chart-bar" style="color:#10b981"></i> الإيرادات الشهرية</h3>
+    </div>
+    <div class="card-body">
+      <canvas id="incomeChart" height="160"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-chart-line" style="color:#6366f1"></i> المرضى الجدد شهرياً</h3>
+    </div>
+    <div class="card-body">
+      <canvas id="patientsChart" height="160"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ─── أيام الأسبوع ─────────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:20px">
+  <div class="card-header">
+    <h3><i class="fas fa-calendar-week" style="color:#8b5cf6"></i> توزيع المواعيد على أيام الأسبوع</h3>
+  </div>
+  <div class="card-body">
+    <canvas id="busyDaysChart" height="60"></canvas>
+  </div>
+</div>
+
+<!-- ─── الصف الثاني ──────────────────────────────────────────────── -->
+<div class="dashboard-grid">
+
+  <!-- أكثر المرضى زيارةً -->
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-star" style="color:#f59e0b"></i> أكثر المرضى زيارةً</h3>
+    </div>
+    <div class="card-body">
+      {% if top_visitors %}
+      <table class="table">
+        <thead><tr><th>#</th><th>المريض</th><th>الهاتف</th><th>عدد الزيارات</th><th>آخر زيارة</th></tr></thead>
+        <tbody>
+          {% for v in top_visitors %}
+          <tr>
+            <td>
+              {% if loop.index == 1 %}<span style="font-size:1.1rem">🥇</span>
+              {% elif loop.index == 2 %}<span style="font-size:1.1rem">🥈</span>
+              {% elif loop.index == 3 %}<span style="font-size:1.1rem">🥉</span>
+              {% else %}{{ loop.index }}{% endif %}
+            </td>
+            <td><a href="{{ url_for('patients.profile', patient_id=v.id) }}">{{ v.full_name }}</a></td>
+            <td>{{ v.phone }}</td>
+            <td><span class="badge badge-scheduled" style="font-size:.85rem">{{ v.visit_count }} زيارة</span></td>
+            <td>{{ v.last_visit }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="empty-state"><i class="fas fa-calendar-times"></i> لا توجد زيارات مكتملة</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- أعلى المرضى دفعاً -->
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-trophy" style="color:#f59e0b"></i> أعلى المرضى دفعاً</h3>
+    </div>
+    <div class="card-body">
+      {% if top_payers %}
+      <table class="table">
+        <thead><tr><th>#</th><th>المريض</th><th>إجمالي المدفوع (د.ع)</th></tr></thead>
+        <tbody>
+          {% for p in top_payers %}
+          {% if p.total_paid > 0 %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><a href="{{ url_for('patients.profile', patient_id=p.id) }}">{{ p.full_name }}</a></td>
+            <td class="text-success text-bold">{{ p.total_paid|fmt_num }}</td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="empty-state"><i class="fas fa-money-bill"></i> لا توجد مدفوعات</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── الديون + حالة المواعيد ──────────────────────────────────── -->
+<div class="dashboard-grid">
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-exclamation-circle" style="color:#ef4444"></i> أعلى الديون المتبقية</h3>
+    </div>
+    <div class="card-body">
+      {% if debts %}
+      <table class="table">
+        <thead><tr><th>#</th><th>المريض</th><th>الهاتف</th><th>المتبقي (د.ع)</th></tr></thead>
+        <tbody>
+          {% for d in debts %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><a href="{{ url_for('patients.profile', patient_id=d.id) }}">{{ d.full_name }}</a></td>
+            <td>{{ d.phone }}</td>
+            <td class="text-danger text-bold">{{ d.remaining|fmt_num }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="empty-state"><i class="fas fa-check-circle text-success"></i> لا توجد ديون متبقية</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- حالة المواعيد -->
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-calendar-alt"></i> حالة المواعيد</h3>
+    </div>
+    <div class="card-body">
+      <canvas id="apptPieChart" height="180"></canvas>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;justify-content:center">
+        {% set status_labels = {'scheduled':'مجدول','completed':'مكتمل','cancelled':'ملغي','no_show':'لم يحضر'} %}
+        {% set status_colors = {'scheduled':'#6366f1','completed':'#10b981','cancelled':'#ef4444','no_show':'#f59e0b'} %}
+        {% for s in appt_stats %}
+        <div style="background:{{ status_colors.get(s.status,'#64748b') }}15;border:1.5px solid {{ status_colors.get(s.status,'#64748b') }};border-radius:20px;padding:6px 14px;font-size:.83rem;color:{{ status_colors.get(s.status,'#64748b') }};font-weight:600">
+          {{ s.cnt }} {{ status_labels.get(s.status, s.status) }}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const incomeData   = {{ monthly_income | tojson }};
+const patientsData = {{ monthly_patients | tojson }};
+const busyDaysRaw  = {{ busy_days | tojson }};
+const apptStatsRaw = {{ appt_stats | tojson }};
+
+function monthLabel(ym) {
+  if (!ym) return '';
+  const [y, m] = ym.split('-');
+  const names = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                 'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  return names[parseInt(m)-1] + ' ' + y;
+}
+
+function buildLabels(d1, d2) {
+  const set = new Set([...d1.map(r=>r.month), ...d2.map(r=>r.month)]);
+  return [...set].sort();
+}
+
+const allLabels   = buildLabels(incomeData, patientsData);
+const incomeVals  = allLabels.map(m => { const r=incomeData.find(x=>x.month===m); return r?r.total:0; });
+const patientVals = allLabels.map(m => { const r=patientsData.find(x=>x.month===m); return r?r.total:0; });
+const labelNames  = allLabels.map(monthLabel);
+
+const chartDefaults = {
+  responsive: true,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { display: false } },
+    y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
+  }
+};
+
+// رسم الإيرادات
+new Chart(document.getElementById('incomeChart'), {
+  type: 'bar',
+  data: {
+    labels: labelNames,
+    datasets: [{ data: incomeVals, backgroundColor: '#10b98133', borderColor: '#10b981', borderWidth: 2, borderRadius: 6 }]
+  },
+  options: { ...chartDefaults,
+    plugins: { ...chartDefaults.plugins,
+      tooltip: { callbacks: { label: ctx => new Intl.NumberFormat('ar-IQ').format(ctx.raw) + ' د.ع' } }
+    }
+  }
+});
+
+// رسم المرضى
+new Chart(document.getElementById('patientsChart'), {
+  type: 'line',
+  data: {
+    labels: labelNames,
+    datasets: [{ data: patientVals, borderColor: '#6366f1', backgroundColor: '#6366f120',
+      borderWidth: 2.5, pointBackgroundColor: '#6366f1', pointRadius: 4, tension: 0.35, fill: true }]
+  },
+  options: chartDefaults
+});
+
+// ─── رسم أيام الأسبوع ──────────────────────────────────────────
+const dayNames = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const dayVals  = [0,1,2,3,4,5,6].map(d => {
+  const r = busyDaysRaw.find(x => parseInt(x.dow) === d);
+  return r ? r.cnt : 0;
+});
+const maxDay = Math.max(...dayVals);
+new Chart(document.getElementById('busyDaysChart'), {
+  type: 'bar',
+  data: {
+    labels: dayNames,
+    datasets: [{
+      data: dayVals,
+      backgroundColor: dayVals.map(v => v === maxDay && maxDay > 0 ? '#8b5cf6' : '#8b5cf633'),
+      borderColor: '#8b5cf6',
+      borderWidth: 2,
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ctx.raw + ' موعد' } }
+    },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { stepSize: 1 } }
+    }
+  }
+});
+
+// ─── رسم دائري لحالة المواعيد ──────────────────────────────────
+const statusColors = { scheduled:'#6366f1', completed:'#10b981', cancelled:'#ef4444', no_show:'#f59e0b' };
+const statusNames  = { scheduled:'مجدول', completed:'مكتمل', cancelled:'ملغي', no_show:'لم يحضر' };
+if (apptStatsRaw.length > 0) {
+  new Chart(document.getElementById('apptPieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: apptStatsRaw.map(s => statusNames[s.status] || s.status),
+      datasets: [{
+        data: apptStatsRaw.map(s => s.cnt),
+        backgroundColor: apptStatsRaw.map(s => statusColors[s.status] || '#64748b'),
+        borderWidth: 2,
+        borderColor: '#fff',
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,493 @@
+﻿{% extends "base.html" %}
+{% block title %}ملف المريض - {{ patient.full_name }}{% endblock %}
+
+{% block content %}
+<style>
+/* ─── ملف المريض المحسّن ─────────────────────────────────────── */
+.patient-hero {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 24px;
+  color: white;
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  position: relative;
+  overflow: hidden;
+}
+.patient-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: rgba(99,102,241,.15);
+  border-radius: 50%;
+}
+.patient-avatar {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(99,102,241,.4);
+  border: 3px solid rgba(255,255,255,.2);
+}
+.patient-hero-info h2 {
+  font-size: 1.5rem;
+  margin: 0 0 8px;
+}
+.patient-hero-info .hero-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: .88rem;
+  opacity: .8;
+}
+.hero-meta span { display: flex; align-items: center; gap: 6px; }
+.hero-meta i { width: 16px; }
+.patient-hero-actions {
+  margin-right: auto;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ─── بطاقات الملخص المالي ──────────────────────────────────── */
+.profile-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.psum-card {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  border: 1px solid #f1f5f9;
+  text-align: center;
+  border-top: 3px solid;
+}
+.psum-card.c-green  { border-top-color: #10b981; }
+.psum-card.c-red    { border-top-color: #ef4444; }
+.psum-card.c-blue   { border-top-color: #6366f1; }
+.psum-card.c-purple { border-top-color: #8b5cf6; }
+.psum-card.c-sky    { border-top-color: #0ea5e9; }
+.psum-card .ps-icon { font-size: 1.5rem; margin-bottom: 8px; }
+.psum-card .ps-num  { font-size: 1.4rem; font-weight: 700; }
+.psum-card .ps-lbl  { font-size: .78rem; color: #64748b; margin-top: 4px; }
+.psum-card.c-green  .ps-num { color: #059669; }
+.psum-card.c-red    .ps-num { color: #dc2626; }
+.psum-card.c-blue   .ps-num { color: #4f46e5; }
+.psum-card.c-purple .ps-num { color: #7c3aed; }
+.psum-card.c-sky    .ps-num { color: #0284c7; }
+</style>
+
+<div class="page-header">
+  <h2>
+    <a href="{{ url_for('patients.index') }}" class="back-link">
+      <i class="fas fa-arrow-right"></i>
+    </a>
+    <i class="fas fa-user-circle"></i> ملف المريض
+  </h2>
+</div>
+
+<!-- ─── بطاقة الهيدر ─────────────────────────────────────────── -->
+<div class="patient-hero">
+  <div class="patient-avatar">
+    {{ patient.full_name[0] if patient.full_name else '؟' }}
+  </div>
+  <div class="patient-hero-info">
+    <h2>{{ patient.full_name }}</h2>
+    <div class="hero-meta">
+      {% if patient.phone %}
+      <span><i class="fas fa-phone"></i>
+        <a href="tel:{{ patient.phone }}" style="color:inherit">{{ patient.phone }}</a>
+      </span>
+      {% endif %}
+      {% if patient.date_of_birth %}
+      <span><i class="fas fa-birthday-cake"></i> {{ patient.date_of_birth|calc_age }}</span>
+      {% endif %}
+      <span><i class="fas fa-venus-mars"></i> {{ 'ذكر' if patient.gender == 'male' else 'أنثى' }}</span>
+      {% if patient.address %}
+      <span><i class="fas fa-map-marker-alt"></i> {{ patient.address }}</span>
+      {% endif %}
+      <span><i class="fas fa-calendar-plus"></i> مريض منذ {{ patient.created_at[:10] }}</span>
+    </div>
+    {% if patient.notes %}
+    <div style="margin-top:12px;background:rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;font-size:.87rem">
+      <i class="fas fa-sticky-note" style="margin-left:6px;opacity:.7"></i>{{ patient.notes }}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ─── بطاقات الملخص ─────────────────────────────────────────── -->
+<div class="profile-summary">
+
+  <div class="psum-card c-green">
+    <div class="ps-icon">💰</div>
+    <div class="ps-num">{{ fin.total_paid|fmt_num }}</div>
+    <div class="ps-lbl">إجمالي المدفوع (د.ع)</div>
+  </div>
+  {% if fin.total_remaining > 0 %}
+  <div class="psum-card c-red">
+    <div class="ps-icon">⏳</div>
+    <div class="ps-num">{{ fin.total_remaining|fmt_num }}</div>
+    <div class="ps-lbl">المتبقي (د.ع)</div>
+  </div>
+  {% endif %}
+  <div class="psum-card c-purple">
+    <div class="ps-icon">🦷</div>
+    <div class="ps-num">{{ medical_records|length }}</div>
+    <div class="ps-lbl">سجل طبي</div>
+  </div>
+  <div class="psum-card c-sky">
+    <div class="ps-icon">📅</div>
+    <div class="ps-num" style="font-size:1rem">
+      {% if next_appt %}
+        {{ next_appt.appointment_date }}
+      {% else %}
+        —
+      {% endif %}
+    </div>
+    <div class="ps-lbl">الموعد القادم</div>
+  </div>
+  <div class="psum-card" style="border-top-color:#64748b">
+    <div class="ps-icon">🏥</div>
+    <div class="ps-num" style="font-size:1rem">
+      {% if last_visit %}
+        {{ last_visit.appointment_date }}
+      {% else %}
+        —
+      {% endif %}
+    </div>
+    <div class="ps-lbl">آخر زيارة</div>
+  </div>
+</div>
+
+<!-- ─── تبويبات ──────────────────────────────────────────────────── -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('medical-tab', this)">
+    <i class="fas fa-notes-medical"></i> السجلات الطبية ({{ medical_records|length }})
+  </button>
+  <button class="tab-btn" onclick="switchTab('teeth-tab', this)">
+    <i class="fas fa-tooth"></i> خريطة الأسنان
+  </button>
+  <button class="tab-btn" onclick="switchTab('plans-tab', this)">
+    <i class="fas fa-clipboard-list"></i> خطط العلاج ({{ treatment_plans|length }})
+  </button>
+  <button class="tab-btn" onclick="switchTab('payments-tab', this)">
+    <i class="fas fa-receipt"></i> المدفوعات ({{ payments|length }})
+  </button>
+  <button class="tab-btn" onclick="switchTab('appointments-tab', this)">
+    <i class="fas fa-calendar-alt"></i> المواعيد ({{ appointments|length }})
+  </button>
+  <button class="tab-btn" onclick="switchTab('prescriptions-tab', this)">
+    <i class="fas fa-prescription"></i> الوصفات ({{ prescriptions|length }})
+  </button>
+</div>
+
+<!-- خريطة الأسنان -->
+<div id="teeth-tab" class="tab-content active card">
+  <div class="card-body">
+
+    <!-- مفتاح الألوان -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px" id="teethLegend"></div>
+
+    <!-- الفك العلوي -->
+    <div style="margin-bottom:6px;text-align:center;font-size:.8rem;color:#64748b">▲ الفك العلوي</div>
+    <div class="teeth-row" id="upperTeeth"></div>
+
+    <!-- فاصل -->
+    <div style="height:10px"></div>
+
+    <!-- الفك السفلي -->
+    <div class="teeth-row" id="lowerTeeth"></div>
+    <div style="margin-top:6px;text-align:center;font-size:.8rem;color:#64748b">▼ الفك السفلي</div>
+
+    <!-- ملاحظة -->
+    <p style="margin-top:14px;font-size:.82rem;color:#94a3b8;text-align:center">
+      انقر على أي سن لتغيير حالته
+    </p>
+
+  </div>
+</div>
+
+<!-- نافذة تغيير حالة السن -->
+<div id="toothModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <h4 style="margin-bottom:16px;font-size:1.1rem">
+      <i class="fas fa-tooth" style="color:#6366f1"></i>
+      السن رقم <span id="toothModalNum"></span>
+    </h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px" id="toothStatusBtns"></div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:.85rem;color:#64748b">ملاحظات (اختياري)</label>
+      <input type="text" id="toothNoteInput" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-top:4px;font-family:inherit">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="saveToothStatus()" style="flex:1;background:#6366f1;color:#fff;border:none;border-radius:8px;padding:10px;cursor:pointer;font-family:inherit">حفظ</button>
+      <button onclick="closeToothModal()" style="background:#f1f5f9;color:#475569;border:none;border-radius:8px;padding:10px 16px;cursor:pointer;font-family:inherit">إلغاء</button>
+    </div>
+  </div>
+</div>
+<div id="plans-tab" class="tab-content card" style="display:none">
+  <div class="card-body">
+    {% if treatment_plans %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>الوصف</th><th>التكلفة</th><th>المدفوع</th>
+          <th>المتبقي</th><th>الأقساط</th><th>الحالة</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for plan in treatment_plans %}
+        <tr>
+          <td>{{ plan.description }}</td>
+          <td>{{ plan.total_cost|fmt_num }}</td>
+          <td class="text-success">{{ plan.amount_paid|fmt_num }}</td>
+          <td class="{{ 'text-danger' if (plan.total_cost - plan.amount_paid) > 0 else 'text-success' }}">
+            {{ (plan.total_cost - plan.amount_paid)|fmt_num }}
+          </td>
+          <td>{{ plan.installments_count }}</td>
+          <td>
+            <span class="badge {{ 'badge-completed' if plan.status == 'completed' else 'badge-scheduled' }}">
+              {{ 'مكتملة' if plan.status == 'completed' else 'نشطة' }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="empty-state"><i class="fas fa-clipboard"></i> لا توجد خطط علاج</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- المدفوعات -->
+<div id="payments-tab" class="tab-content card" style="display:none">
+  <div class="card-body">
+    {% if payments %}
+    <table class="table">
+      <thead>
+        <tr><th>الدفعة</th><th>المبلغ</th><th>التاريخ</th><th>الطريقة</th></tr>
+      </thead>
+      <tbody>
+        {% for pay in payments %}
+        <tr>
+          <td><span class="badge badge-info">الدفعة {{ pay.payment_num|ordinal_ar }}</span></td>
+          <td class="text-success text-bold">{{ pay.amount|fmt_num }} د.ع</td>
+          <td>{{ pay.payment_date }}</td>
+          <td>{{ pay.payment_method | payment_label }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="empty-state"><i class="fas fa-money-bill"></i> لا توجد مدفوعات</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- المواعيد -->
+<div id="appointments-tab" class="tab-content card" style="display:none">
+  <div class="card-body">
+    {% if appointments %}
+    <table class="table">
+      <thead>
+        <tr><th>التاريخ</th><th>الوقت</th><th>المدة</th><th>الحالة</th><th>ملاحظات</th></tr>
+      </thead>
+      <tbody>
+        {% for a in appointments %}
+        <tr>
+          <td>{{ a.appointment_date }}</td>
+          <td>{{ a.appointment_time }}</td>
+          <td>{{ a.duration_minutes }} دقيقة</td>
+          <td><span class="badge badge-{{ a.status }}">{{ a.status | status_label }}</span></td>
+          <td>{{ a.notes or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="empty-state"><i class="fas fa-calendar-times"></i> لا توجد مواعيد</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- الوصفات الطبية -->
+<div id="prescriptions-tab" class="tab-content card" style="display:none">
+  <div class="card-body">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <strong><i class="fas fa-prescription"></i> الوصفات الطبية</strong>
+      <a href="{{ url_for('medical.prescription_form', patient_id=patient.id) }}" class="btn btn-sm btn-primary">
+        <i class="fas fa-plus"></i> وصفة جديدة
+      </a>
+    </div>
+    {% if prescriptions %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>رقم التسجيل</th>
+          <th>التاريخ</th>
+          <th>العمر</th>
+          <th>الأدوية</th>
+          <th>حُفظ في</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rx in prescriptions %}
+        <tr>
+          <td>{{ rx.rx_number or '—' }}</td>
+          <td>{{ rx.prescription_date or '—' }}</td>
+          <td>{{ rx.patient_age or '—' }}</td>
+          <td>
+            {% if rx.drugs %}
+              <ul style="margin:0;padding-right:16px;font-size:.85rem">
+              {% for d in rx.drugs %}
+                <li>{{ d.name }}{% if d.dosage %} – {{ d.dosage }}{% endif %}{% if d.frequency %} – {{ d.frequency }}{% endif %}</li>
+              {% endfor %}
+              </ul>
+            {% else %}—{% endif %}
+          </td>
+          <td style="font-size:.78rem;color:#64748b">{{ rx.created_at[:16] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="empty-state"><i class="fas fa-prescription"></i> لا توجد وصفات محفوظة</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).style.display = 'block';
+  btn.classList.add('active');
+}
+
+/* ════════════════════════════════════════════════════════
+   خريطة الأسنان - Dental Chart
+════════════════════════════════════════════════════════ */
+const PATIENT_ID = {{ patient.id }};
+const TOOTH_MAP  = {{ tooth_map | tojson }};
+
+const STATUS = {
+  healthy:         { label: 'سليم',        bg: '#f0fdf4', border: '#86efac', text: '#166534', icon: '✓' },
+  filling:         { label: 'حشو',         bg: '#eff6ff', border: '#93c5fd', text: '#1d4ed8', icon: '◼' },
+  crown:           { label: 'تاج',         bg: '#fffbeb', border: '#fcd34d', text: '#92400e', icon: '♛' },
+  extracted:       { label: 'مخلوع',       bg: '#fef2f2', border: '#fca5a5', text: '#991b1b', icon: '✕' },
+  root_canal:      { label: 'قناة جذر',    bg: '#f5f3ff', border: '#c4b5fd', text: '#5b21b6', icon: '◎' },
+  implant:         { label: 'زراعة',       bg: '#ecfdf5', border: '#6ee7b7', text: '#065f46', icon: '⚓' },
+  needs_treatment: { label: 'يحتاج علاج',  bg: '#fff7ed', border: '#fdba74', text: '#9a3412', icon: '!' },
+};
+
+// ترتيب الأسنان (FDI)
+const UPPER = [18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28];
+const LOWER = [48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38];
+
+let currentTooth = null, currentStatus = 'healthy';
+
+function renderLegend() {
+  const el = document.getElementById('teethLegend');
+  if (!el) return;
+  el.innerHTML = Object.entries(STATUS).map(([k,v]) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;background:${v.bg};border:1.5px solid ${v.border};color:${v.text};border-radius:20px;padding:3px 10px;font-size:.78rem">
+      ${v.icon} ${v.label}
+    </span>`
+  ).join('');
+}
+
+function renderRow(nums, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = nums.map(n => {
+    const key   = String(n);
+    const rec   = TOOTH_MAP[key];
+    const st    = rec ? rec.status : 'healthy';
+    const s     = STATUS[st] || STATUS.healthy;
+    const notes = rec ? rec.notes : '';
+    return `<div class="tooth-box" title="${s.label}${notes ? ': ' + notes : ''}"
+                 style="background:${s.bg};border-color:${s.border};color:${s.text}"
+                 onclick="openToothModal('${key}','${st}','${(notes||'').replace(/'/g,"\\'")}')">
+      <span class="tooth-icon">${s.icon}</span>
+      <span class="tooth-num">${n}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderChart() {
+  renderLegend();
+  renderRow(UPPER, 'upperTeeth');
+  renderRow(LOWER, 'lowerTeeth');
+}
+
+function openToothModal(num, status, notes) {
+  currentTooth  = num;
+  currentStatus = status || 'healthy';
+  document.getElementById('toothModalNum').textContent = num;
+  document.getElementById('toothNoteInput').value = notes || '';
+  // Render status buttons
+  const btns = document.getElementById('toothStatusBtns');
+  btns.innerHTML = Object.entries(STATUS).map(([k,v]) =>
+    `<button onclick="selectStatus('${k}')" id="stBtn_${k}"
+        style="background:${k===currentStatus?v.border:v.bg};border:2px solid ${v.border};color:${v.text};
+               border-radius:8px;padding:7px 4px;font-size:.78rem;cursor:pointer;font-family:inherit;
+               font-weight:${k===currentStatus?'700':'400'}">
+      ${v.icon} ${v.label}
+    </button>`
+  ).join('');
+  document.getElementById('toothModal').style.display = 'flex';
+}
+
+function selectStatus(st) {
+  currentStatus = st;
+  // Re-render buttons
+  Object.keys(STATUS).forEach(k => {
+    const btn = document.getElementById('stBtn_' + k);
+    if (!btn) return;
+    const v = STATUS[k];
+    btn.style.background     = k === st ? v.border : v.bg;
+    btn.style.fontWeight     = k === st ? '700' : '400';
+  });
+}
+
+function closeToothModal() {
+  document.getElementById('toothModal').style.display = 'none';
+}
+
+async function saveToothStatus() {
+  const notes = document.getElementById('toothNoteInput').value.trim();
+  const fd = new FormData();
+  fd.append('tooth_num', currentTooth);
+  fd.append('status', currentStatus);
+  fd.append('notes', notes);
+  const res = await fetch(`/patients/${PATIENT_ID}/tooth/save`, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.success) {
+    TOOTH_MAP[currentTooth] = { status: currentStatus, notes };
+    renderChart();
+    closeToothModal();
+    showToast(data.message, 'success');
+  } else {
+    showToast(data.message || 'خطأ', 'error');
+  }
+}
+
+// تهيئة عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', renderChart);
+</script>
+{% endblock %}

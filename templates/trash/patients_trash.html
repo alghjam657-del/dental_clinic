@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}سلة المحذوفات - المرضى{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>🗑️ سلة المحذوفات - المرضى</h2>
+            <small class="text-muted">المرضى المحذوفون يُبقى عليهم هنا لمدة 30 يوماً قبل حذفهم نهائياً</small>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('patients.index') }}" class="btn btn-outline-secondary">
+                ← العودة إلى قائمة المرضى
+            </a>
+        </div>
+    </div>
+
+    {% if deleted_patients %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>الاسم</th>
+                    <th>الهاتف</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>تاريخ الميلاد</th>
+                    <th>تم الحذف في</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in deleted_patients %}
+                <tr>
+                    <td><strong>{{ patient.id }}</strong></td>
+                    <td>{{ patient.full_name }}</td>
+                    <td>{{ patient.phone }}</td>
+                    <td>{{ patient.email or '—' }}</td>
+                    <td>
+                        {% if patient.date_of_birth %}
+                            {{ patient.date_of_birth }} 
+                            ({{ (now.year - patient.date_of_birth|int)|default('—') }} سنة)
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ patient.deleted_at }}</small>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-success" onclick="restorePatient({{ patient.id }})">
+                            ↺ استرجاع
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="permanentDeletePatient({{ patient.id }})">
+                            🗑️ حذف نهائي
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <p class="mb-0">سلة المحذوفات فارغة</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function restorePatient(id) {
+    if (!confirm('هل تريد استرجاع هذا المريض؟')) return;
+    
+    fetch(`/patients/${id}/restore`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('خطأ: ' + data.message);
+            }
+        })
+        .catch(e => alert('خطأ في الاتصال: ' + e));
+}
+
+function permanentDeletePatient(id) {
+    if (!confirm('⚠️ هذا سيحذف المريض نهائياً ولا يمكن استرجاعه. هل أنت متأكد؟')) return;
+    
+    fetch(`/patients/${id}/permanent-delete`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('خطأ: ' + data.message);
+            }
+        })
+        .catch(e => alert('خطأ في الاتصال: ' + e));
+}
+</script>
+{% endblock %}

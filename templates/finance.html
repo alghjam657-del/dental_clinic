@@ -1,0 +1,380 @@
+﻿{% extends "base.html" %}
+{% block title %}المالية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>
+      <div class="header-icon"><i class="fas fa-dollar-sign"></i></div>
+      إدارة المالية
+    </h2>
+    <p class="page-subtitle">خطط العلاج والمدفوعات</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('finance.installments') }}" class="btn btn-outline">
+      <i class="fas fa-layer-group"></i> عرض الأقساط
+    </a>
+    <a href="{{ url_for('finance.export_plans_excel') }}" class="btn btn-outline" title="تصدير سجل المدفوعات Excel">
+      <i class="fas fa-file-excel" style="color:#217346"></i> سجل المدفوعات Excel
+    </a>
+    <a href="{{ url_for('finance.export_payments_excel') }}" class="btn btn-outline" title="تصدير المدفوعات Excel">
+      <i class="fas fa-file-excel" style="color:#217346"></i> مدفوعات Excel
+    </a>
+    <button class="btn btn-success" onclick="openModal('addPaymentModal')">
+      <i class="fas fa-money-bill-wave"></i> تسجيل دفعة
+    </button>
+  </div>
+</div>
+
+<!-- ─── ملخص مالي ─────────────────────────────────────────────────── -->
+<div class="stats-grid">
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_income|fmt_num }}</span>
+      <span class="stat-label">إجمالي المدفوعات (د.ع)</span>
+    </div>
+  </div>
+  <div class="stat-card stat-orange">
+    <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_remaining|fmt_num }}</span>
+      <span class="stat-label">إجمالي المتبقي (د.ع)</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── خطط العلاج ────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-clipboard-list"></i> سجل المدفوعات</h3>
+    <div class="search-bar" style="margin-bottom:0">
+      <div class="search-input-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="plansSearch" placeholder="بحث بتسلسل المريض أو الاسم أو الوصف..."
+               oninput="filterTable('plansSearch','plansTable')">
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    {% if plans %}
+    <table class="table table-hover" id="plansTable">
+      <thead>
+        <tr>
+          <th>تسلسل</th>
+          <th>المريض</th>
+          <th>الوصف</th>
+          <th>التكلفة الكلية</th>
+          <th>المدفوع</th>
+          <th>المتبقي</th>
+          <th>الحالة</th>
+          <th>تاريخ الإنشاء</th>
+          <th>فاتورة</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for plan in plans %}
+        <tr>
+          <td><strong>{{ plan.patient_id }}</strong></td>
+          <td>
+            <a href="{{ url_for('patients.profile', patient_id=plan.patient_id) }}">
+              {{ plan.patient_id }} - {{ plan.patient_name }}
+            </a>
+          </td>
+          <td>{{ plan.description }}</td>
+          <td class="text-bold">{{ plan.total_cost|fmt_num }}</td>
+          <td class="text-success">{{ plan.amount_paid|fmt_num }}</td>
+          <td class="{{ 'text-danger' if (plan.total_cost - plan.amount_paid) > 0 else 'text-success' }}">
+            {{ (plan.total_cost - plan.amount_paid)|fmt_num }}
+          </td>
+          <td>
+            <span class="badge {{ 'badge-completed' if plan.status == 'completed' else 'badge-scheduled' }}">
+              {{ 'مكتملة' if plan.status == 'completed' else 'نشطة' }}
+            </span>
+          </td>
+          <td>{{ plan.created_at[:10] }}</td>
+          <td>
+            <a href="{{ url_for('finance.invoice', plan_id=plan.id) }}" target="_blank"
+               class="btn btn-sm" style="background:#4f46e5;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;text-decoration:none;">
+              <i class="fas fa-file-pdf"></i> PDF
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="empty-state"><i class="fas fa-clipboard"></i> لا توجد خطط علاج</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ─── مدفوعات ─────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-receipt"></i> مدفوعات</h3>
+    <div class="search-bar" style="margin-bottom:0">
+      <div class="search-input-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="paymentsSearch" placeholder="بحث بتسلسل المريض أو الاسم أو المبلغ..."
+               oninput="filterTable('paymentsSearch','paymentsTable')">
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    {% if payments %}
+    <table class="table table-hover" id="paymentsTable">
+      <thead>
+        <tr>
+          <th>الدفعة</th>
+          <th>المريض</th>
+          <th>المبلغ (د.ع)</th>
+          <th>التاريخ</th>
+          <th>طريقة الدفع</th>
+          <th>إيصال</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pay in payments %}
+        <tr>
+          <td><span class="badge badge-info">الدفعة {{ pay.payment_num|ordinal_ar }}</span></td>
+          <td>
+            <a href="{{ url_for('patients.profile', patient_id=pay.patient_id) }}">
+              {{ pay.patient_id }} - {{ pay.patient_name }}
+            </a>
+          </td>
+          <td class="text-success text-bold">{{ pay.amount|fmt_num }}</td>
+          <td>{{ pay.payment_date }}</td>
+          <td>{{ pay.payment_method | payment_label }}</td>
+          <td>
+            <a href="{{ url_for('finance.receipt', payment_id=pay.id) }}" target="_blank"
+               class="btn btn-xs btn-outline" title="طباعة إيصال">
+              <i class="fas fa-print"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="empty-state"><i class="fas fa-money-bill"></i> لا توجد مدفوعات</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ─── Modal: تسجيل دفعة ─────────────────────────────────────────── -->
+<div id="addPaymentModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><div class="modal-icon"><i class="fas fa-money-bill-wave"></i></div> تسجيل دفعة</h3>
+      <button class="modal-close" onclick="closeModal('addPaymentModal')">×</button>
+    </div>
+    <form id="addPaymentForm">
+      <div class="modal-body">
+
+        <!-- المريض -->
+        <div class="form-row">
+          <div class="form-group">
+            <label><i class="fas fa-hashtag"></i> تسلسل المريض *</label>
+            <input type="number" min="1" id="payPatientSeq" placeholder="مثال: 1"
+                   oninput="selectPatientBySequence('payPatientSeq', 'payPatientSelect', loadPatientPlans)">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-user"></i> المريض *</label>
+            <select name="patient_id" required id="payPatientSelect"
+                    onchange="loadPatientPlans(this.value)">
+              <option value="">-- اختر المريض --</option>
+              {% for p in patients %}
+              <option value="{{ p.id }}">{{ p.id }} - {{ p.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- معلومات القسط المرتبط -->
+        <div id="planSection">
+          <div class="form-group">
+            <label><i class="fas fa-layer-group"></i> ربط بقسط / خطة علاج</label>
+            <select name="treatment_plan_id" id="payPlanSelect"
+                    onchange="onPlanChange(this)">
+              <option value="">-- بدون ربط --</option>
+            </select>
+          </div>
+
+          <!-- بطاقة تفاصيل القسط المختار -->
+          <div id="planInfoCard" style="display:none;
+               background:linear-gradient(135deg,#f0f2ff,#e8eaff);
+               border:1px solid #c7d2fe;border-radius:12px;
+               padding:14px 18px;margin-bottom:16px">
+            <div style="font-size:0.78rem;font-weight:700;color:#4338ca;
+                        margin-bottom:10px;display:flex;align-items:center;gap:6px">
+              <i class="fas fa-info-circle"></i> تفاصيل القسط المختار
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+              <div style="background:#fff;border-radius:8px;padding:10px">
+                <div style="font-size:0.7rem;color:#6b7280;margin-bottom:3px">الإجمالي</div>
+                <div style="font-weight:800;color:#1a1a2e;font-size:0.9rem" id="piTotal">—</div>
+              </div>
+              <div style="background:#fff;border-radius:8px;padding:10px">
+                <div style="font-size:0.7rem;color:#6b7280;margin-bottom:3px">المدفوع</div>
+                <div style="font-weight:800;color:#10b981;font-size:0.9rem" id="piPaid">—</div>
+              </div>
+              <div style="background:#fff;border-radius:8px;padding:10px">
+                <div style="font-size:0.7rem;color:#ef4444;margin-bottom:3px">المتبقي</div>
+                <div style="font-weight:800;color:#ef4444;font-size:0.9rem" id="piRemain">—</div>
+              </div>
+            </div>
+            <div id="planProgressWrap" style="margin-top:12px">
+              <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#6b7280;margin-bottom:5px">
+                <span>نسبة السداد</span>
+                <span id="piPct">0%</span>
+              </div>
+              <div style="height:8px;background:#e8eaff;border-radius:10px;overflow:hidden">
+                <div id="piBar" style="height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:10px;transition:width .4s ease;width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- المبلغ والتاريخ -->
+        <div class="form-row">
+          <div class="form-group">
+            <label><i class="fas fa-coins"></i> المبلغ (د.ع) *</label>
+            <input type="text" inputmode="numeric" name="amount" id="payAmount"
+                   required oninput="numFmt(this)">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-calendar"></i> تاريخ الدفع *</label>
+            <input type="date" name="payment_date" required value="{{ now_date }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label><i class="fas fa-wallet"></i> طريقة الدفع</label>
+            <select name="payment_method">
+              <option value="cash">نقدي</option>
+              <option value="card">بطاقة</option>
+              <option value="transfer">تحويل بنكي</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-sticky-note"></i> ملاحظات</label>
+            <input type="text" name="notes" placeholder="اختياري">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('addPaymentModal')">إلغاء</button>
+        <button type="submit" class="btn btn-success">
+          <i class="fas fa-save"></i> تسجيل الدفعة
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ─── اختيار المريض عبر التسلسل ───────────────────────────────────
+function selectPatientBySequence(seqInputId, selectId, callback) {
+  const seq = (document.getElementById(seqInputId).value || '').trim();
+  const select = document.getElementById(selectId);
+
+  if (!seq) {
+    select.value = '';
+    if (typeof callback === 'function') callback('');
+    return;
+  }
+
+  const target = Array.from(select.options).find((o) => o.value === seq);
+  if (target) {
+    select.value = seq;
+    if (typeof callback === 'function') callback(seq);
+  }
+}
+
+// ─── حفظ بيانات الخطط للاستخدام عند اختيار الخطة ─────────────────
+let _cachedPlans = [];
+
+// ─── تحميل خطط مريض عند اختياره ──────────────────────────────────
+async function loadPatientPlans(patientId) {
+  const select = document.getElementById('payPlanSelect');
+  select.innerHTML = '<option value="">-- بدون ربط --</option>';
+  hidePlanInfo();
+  _cachedPlans = [];
+  if (!patientId) return;
+
+  const res   = await fetch(`/finance/patient/${patientId}/plans`);
+  const plans = await res.json();
+  _cachedPlans = plans;
+
+  for (const p of plans) {
+    const remain = fmtNum(p.total_cost - p.amount_paid);
+    const instVal = p.installments_count > 0
+      ? fmtNum((p.total_cost - p.initial_payment) / p.installments_count)
+      : fmtNum(p.total_cost);
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.description} — متبقي: ${remain} د.ع (${p.installments_count} قسط × ${instVal} د.ع)`;
+    select.appendChild(opt);
+  }
+
+  // إذا كان هناك خطة واحدة نشطة، اختارها تلقائياً
+  if (plans.length === 1) {
+    select.value = plans[0].id;
+    onPlanChange(select);
+  }
+}
+
+// ─── عند اختيار خطة ───────────────────────────────────────────────
+function onPlanChange(sel) {
+  const planId = parseInt(sel.value);
+  if (!planId) { hidePlanInfo(); return; }
+
+  const plan = _cachedPlans.find(p => p.id === planId);
+  if (!plan) return;
+
+  const total   = plan.total_cost;
+  const paid    = plan.amount_paid;
+  const remain  = total - paid;
+  const pct     = total > 0 ? Math.round((paid / total) * 100) : 0;
+  const instVal = plan.installments_count > 0
+    ? ((total - (plan.initial_payment || 0)) / plan.installments_count)
+    : total;
+
+  document.getElementById('piTotal').textContent  = fmtNum(total)  + ' د.ع';
+  document.getElementById('piPaid').textContent   = fmtNum(paid)   + ' د.ع';
+  document.getElementById('piRemain').textContent = fmtNum(remain) + ' د.ع';
+  document.getElementById('piPct').textContent    = pct + '%';
+  document.getElementById('piBar').style.width    = pct + '%';
+  document.getElementById('planInfoCard').style.display = 'block';
+
+  // اقتراح قيمة القسط تلقائياً في حقل المبلغ
+  document.getElementById('payAmount').value = parseFloat(instVal);
+}
+
+function hidePlanInfo() {
+  document.getElementById('planInfoCard').style.display = 'none';
+}
+
+// ─── تسجيل دفعة ───────────────────────────────────────────────────
+document.getElementById('addPaymentForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const amtEl = document.getElementById('payAmount');
+  amtEl.value = amtEl.value.replace(/,/g,'');
+  const fd  = new FormData(e.target);
+  const res = await apiPost('/finance/payment/add', fd);
+  if (res.success) {
+    showToast(res.message, 'success');
+    closeModal('addPaymentModal');
+    setTimeout(() => location.reload(), 700);
+  } else {
+    showToast(res.message, 'error');
+  }
+});
+</script>
+{% endblock %}

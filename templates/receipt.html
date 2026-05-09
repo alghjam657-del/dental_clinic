@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إيصال دفع #{{ payment.id }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --ink: #0f172a;
+      --sub: #475569;
+      --muted: #64748b;
+      --line: #d9e3f0;
+      --brand: #1d4ed8;
+      --brand-soft: #eff6ff;
+      --success: #166534;
+      --success-soft: #ecfdf5;
+    }
+
+    body {
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background: #edf2f8;
+      color: var(--ink);
+      direction: rtl;
+      padding: 18px 0;
+    }
+
+    .screen-actions {
+      width: 210mm;
+      margin: 0 auto 10px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-start;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: .93rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+    }
+
+    .btn-print { background: var(--brand); color: #fff; }
+    .btn-print:hover { background: #1e40af; }
+    .btn-close { background: #e2e8f0; color: #334155; }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #d7e0eb;
+      box-shadow: 0 18px 36px rgba(15, 23, 42, .14);
+      padding: 14mm;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .watermark {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      font-size: 68mm;
+      color: rgba(29, 78, 216, .035);
+      font-weight: 800;
+      transform: rotate(-22deg);
+      user-select: none;
+    }
+
+    .top-strip {
+      height: 7px;
+      background: linear-gradient(90deg, #1d4ed8, #2563eb, #38bdf8);
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    .header {
+      display: grid;
+      grid-template-columns: 1fr 72mm;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--line);
+      margin-bottom: 14px;
+    }
+
+    .clinic-name {
+      color: var(--brand);
+      font-size: 1.55rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .clinic-line {
+      color: var(--muted);
+      font-size: .88rem;
+      margin-bottom: 4px;
+      line-height: 1.5;
+    }
+
+    .meta {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      overflow: hidden;
+      align-self: start;
+    }
+
+    .meta-title {
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: .98rem;
+      font-weight: 800;
+      text-align: center;
+      padding: 9px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #ebf0f6;
+      font-size: .84rem;
+    }
+
+    .meta-row:last-child { border-bottom: none; }
+    .meta-key { color: var(--muted); }
+    .meta-val { color: var(--ink); font-weight: 700; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .card-title {
+      background: #f8fafc;
+      color: var(--sub);
+      font-size: .82rem;
+      font-weight: 700;
+      padding: 9px 11px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card-body { padding: 6px 11px; }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px dashed #e7edf5;
+      font-size: .88rem;
+    }
+
+    .info-row:last-child { border-bottom: none; }
+    .label { color: var(--muted); }
+    .value { color: var(--ink); font-weight: 700; }
+
+    .amount {
+      margin: 10px 0;
+      border: 2px solid #86efac;
+      background: linear-gradient(135deg, var(--success-soft), #dcfce7);
+      border-radius: 12px;
+      text-align: center;
+      padding: 14px 10px;
+    }
+
+    .amount-cap {
+      color: var(--success);
+      font-size: .88rem;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .amount-num {
+      color: #14532d;
+      font-size: 2.25rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: .5px;
+    }
+
+    .amount-cur {
+      color: var(--success);
+      font-size: .85rem;
+      margin-top: 6px;
+    }
+
+    .notes {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .notes-body {
+      padding: 10px 12px;
+      min-height: 34mm;
+      font-size: .88rem;
+      line-height: 1.65;
+      color: #334155;
+      white-space: pre-wrap;
+    }
+
+    .footer {
+      margin-top: 14px;
+      border-top: 2px solid var(--line);
+      padding-top: 10px;
+    }
+
+    .signatures {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .sign {
+      border: 1px dashed #b9c9dd;
+      border-radius: 10px;
+      min-height: 30mm;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      color: var(--muted);
+      font-size: .82rem;
+      padding: 8px;
+    }
+
+    .thanks {
+      margin-top: 8px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: .8rem;
+    }
+
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .screen-actions { display: none; }
+      .page {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+      }
+      .watermark { color: rgba(29, 78, 216, .03); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="screen-actions">
+  <button class="btn btn-close" onclick="window.close()">إغلاق</button>
+  <button class="btn btn-print" onclick="window.print()">طباعة A4</button>
+</div>
+
+<div class="page">
+  <div class="watermark">RECEIPT</div>
+
+  <div class="top-strip"></div>
+
+  <header class="header">
+    <div>
+      <div class="clinic-name">{{ clinic.get('clinic_name', 'عيادة الأسنان') }}</div>
+      <div class="clinic-line">{{ clinic.get('clinic_address', '—') }}</div>
+      <div class="clinic-line">{{ clinic.get('clinic_phone', '—') }}{% if clinic.get('clinic_email') %} | {{ clinic.get('clinic_email') }}{% endif %}</div>
+    </div>
+
+    <div class="meta">
+      <div class="meta-title">إيصال قبض</div>
+      <div class="meta-row"><span class="meta-key">رقم الإيصال</span><span class="meta-val">#{{ payment.id }}</span></div>
+      <div class="meta-row"><span class="meta-key">تاريخ الدفع</span><span class="meta-val">{{ payment.payment_date }}</span></div>
+      <div class="meta-row"><span class="meta-key">تاريخ الإصدار</span><span class="meta-val">{{ payment.created_at[:16] if payment.created_at else payment.payment_date }}</span></div>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+      <section class="card">
+        <div class="card-title">بيانات المريض</div>
+        <div class="card-body">
+          <div class="info-row"><span class="label">الاسم الكامل</span><span class="value">{{ payment.full_name }}</span></div>
+          <div class="info-row"><span class="label">الهاتف</span><span class="value">{{ payment.phone or '—' }}</span></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">تفاصيل الدفعة</div>
+        <div class="card-body">
+          <div class="info-row">
+            <span class="label">طريقة الدفع</span>
+            <span class="value">
+              {% if payment.payment_method == 'cash' %}نقدي
+              {% elif payment.payment_method == 'card' %}بطاقة
+              {% else %}تحويل بنكي{% endif %}
+            </span>
+          </div>
+          <div class="info-row"><span class="label">رقم المريض</span><span class="value">{{ payment.patient_id }}</span></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="amount">
+      <div class="amount-cap">تم استلام مبلغ</div>
+      <div class="amount-num">{{ payment.amount|fmt_num }}</div>
+      <div class="amount-cur">دينار عراقي</div>
+    </section>
+
+    <section class="notes">
+      <div class="card-title">ملاحظات</div>
+      <div class="notes-body">{{ payment.notes or '—' }}</div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="signatures">
+      <div class="sign">توقيع المستلم</div>
+      <div class="sign">ختم العيادة</div>
+    </div>
+    <div class="thanks">شكراً لثقتكم - {{ clinic.get('clinic_hours', '') }}</div>
+  </footer>
+</div>
+
+</body>
+</html>
+</html>

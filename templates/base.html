@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% if csrf_token is defined %}
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  {% endif %}
+  <title>{% block title %}عيادة د. علي حسين{% endblock %} - نظام الإدارة</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- ─── شريط التنقل الجانبي ──────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <button id="mobileMenuClose" class="mobile-menu-close" type="button" aria-label="إغلاق القائمة">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="sidebar-logo-icon">
+        <i class="fas fa-tooth"></i>
+      </div>
+      <div class="sidebar-logo-text">
+        <h2>د. علي حسين</h2>
+        <span>عيادة الأسنان المتخصصة</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-title">القائمة الرئيسية</div>
+      {% if session.role == 'accountant' %}
+      <a href="{{ url_for('patients.index') }}"
+         class="nav-item {% if request.endpoint and request.endpoint.startswith('patients.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-users"></i></div>
+        <span>المرضى</span>
+      </a>
+
+      <div class="sidebar-section-title">المالية</div>
+
+      <a href="{{ url_for('finance.index') }}"
+         class="nav-item {% if request.endpoint and request.endpoint.startswith('finance.') and request.endpoint != 'finance.installments' %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-dollar-sign"></i></div>
+        <span>المالية</span>
+      </a>
+
+      <a href="{{ url_for('finance.installments') }}"
+         class="nav-item {% if request.endpoint == 'finance.installments' %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-layer-group"></i></div>
+        <span>الأقساط</span>
+      </a>
+
+      <a href="{{ url_for('finance.overdue_patients') }}"
+         class="nav-item {% if request.endpoint == 'finance.overdue_patients' %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-user-clock"></i></div>
+        <span>المتأخرون عن القسط</span>
+      </a>
+      {% elif session.role == 'doctor' %}
+      <a href="{{ url_for('patients.index') }}"
+        class="nav-item {% if request.endpoint and request.endpoint.startswith('patients.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-users"></i></div>
+        <span>المرضى</span>
+      </a>
+
+      <div class="sidebar-section-title">القسم الطبي</div>
+
+      <a href="{{ url_for('medical.prescription_form') }}"
+        class="nav-item {% if request.endpoint and request.endpoint.startswith('medical.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-prescription"></i></div>
+        <span>وصفة طبية</span>
+      </a>
+      {% elif session.role == 'reception' %}
+      <a href="{{ url_for('patients.index') }}"
+        class="nav-item {% if request.endpoint and request.endpoint.startswith('patients.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-users"></i></div>
+        <span>المرضى</span>
+      </a>
+      {% else %}
+      <a href="{{ url_for('dashboard.index') }}"
+         class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-chart-pie"></i></div>
+        <span>لوحة التحكم</span>
+      </a>
+
+      <a href="{{ url_for('patients.index') }}"
+         class="nav-item {% if request.endpoint and request.endpoint.startswith('patients.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-users"></i></div>
+        <span>المرضى</span>
+      </a>
+
+      <div class="sidebar-section-title">الطبية والمالية</div>
+
+      <a href="{{ url_for('medical.prescription_form') }}"
+         class="nav-item {% if request.endpoint and request.endpoint.startswith('medical.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-prescription"></i></div>
+        <span>وصفة طبية</span>
+      </a>
+
+      <a href="{{ url_for('finance.index') }}"
+         class="nav-item {% if request.endpoint and request.endpoint.startswith('finance.') and request.endpoint != 'finance.installments' %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-dollar-sign"></i></div>
+        <span>المالية</span>
+      </a>
+
+      <a href="{{ url_for('finance.installments') }}"
+         class="nav-item {% if request.endpoint == 'finance.installments' %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-layer-group"></i></div>
+        <span>الأقساط</span>
+      </a>
+
+      <a href="{{ url_for('finance.overdue_patients') }}"
+         class="nav-item {% if request.endpoint == 'finance.overdue_patients' %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-user-clock"></i></div>
+        <span>المتأخرون عن القسط</span>
+      </a>
+
+      <a href="{{ url_for('settings.index') }}"
+         class="nav-item {% if request.endpoint and request.endpoint.startswith('settings.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-cog"></i></div>
+        <span>الإعدادات</span>
+      </a>
+
+      {% if session.role == 'admin' %}
+      <a href="{{ url_for('reports.index') }}"
+         class="nav-item {% if request.endpoint and request.endpoint.startswith('reports.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-chart-bar"></i></div>
+        <span>التقارير</span>
+      </a>
+      {% endif %}
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar">
+          {{ session.full_name[0] if session.full_name else 'م' }}
+        </div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">{{ session.full_name }}</div>
+          {% set session_role_labels = {
+            'admin': 'مدير النظام',
+            'reception': 'استقبال',
+            'accountant': 'محاسب',
+            'doctor': 'طبيب',
+            'staff': 'موظف'
+          } %}
+          <div class="sidebar-user-role">{{ session_role_labels.get(session.role, 'موظف') }}</div>
+        </div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>تسجيل الخروج</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="mobile-topbar">
+    <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="فتح القائمة">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="mobile-topbar-brand">
+      <i class="fas fa-tooth"></i>
+      <span id="mobileTopbarTitle">عيادة د. علي حسين</span>
+    </div>
+    <a href="{{ url_for('auth.logout') }}" class="mobile-topbar-logout" title="تسجيل الخروج" aria-label="تسجيل الخروج">
+      <i class="fas fa-sign-out-alt"></i>
+    </a>
+  </div>
+  <div id="mobileBackdrop" class="mobile-backdrop" aria-hidden="true"></div>
+
+  <!-- شريط تنقل سفلي للهاتف -->
+  <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="التنقل السريع"></nav>
+
+  <!-- ─── المحتوى الرئيسي ───────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- رسائل Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <i class="fas fa-info-circle"></i> {{ message }}
+            <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Toast Notifications (AJAX) -->
+    <div id="toast-container"></div>
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    (function () {
+      const sidebar = document.querySelector('.sidebar');
+      const menuBtn = document.getElementById('mobileMenuBtn');
+      const closeBtn = document.getElementById('mobileMenuClose');
+      const backdrop = document.getElementById('mobileBackdrop');
+      if (!sidebar || !menuBtn || !backdrop) return;
+
+      function isMobile() {
+        return window.matchMedia('(max-width: 900px)').matches;
+      }
+
+      function syncMobileTableMode() {
+        const mobile = isMobile();
+        const tables = document.querySelectorAll('table.table, table.data-table');
+
+        tables.forEach(function (table) {
+          const headers = Array.from(table.querySelectorAll('thead th')).map(function (th) {
+            return th.textContent.trim();
+          });
+
+          if (mobile) {
+            table.classList.add('mobile-cards');
+            table.querySelectorAll('tbody tr').forEach(function (row) {
+              Array.from(row.children).forEach(function (cell, idx) {
+                if (cell.tagName === 'TD') {
+                  cell.setAttribute('data-label', headers[idx] || '');
+                }
+              });
+            });
+          } else {
+            table.classList.remove('mobile-cards');
+            table.querySelectorAll('tbody td[data-label]').forEach(function (td) {
+              td.removeAttribute('data-label');
+            });
+          }
+        });
+      }
+
+      function setMobileTopbarTitle() {
+        const title = document.getElementById('mobileTopbarTitle');
+        if (!title) return;
+        const active = sidebar.querySelector('a.nav-item.active span');
+        title.textContent = active ? active.textContent.trim() : 'عيادة د. علي حسين';
+      }
+
+      function closeSidebar() {
+        document.body.classList.remove('sidebar-mobile-open');
+        sidebar.classList.remove('sidebar-open');
+      }
+
+      function toggleSidebar() {
+        const willOpen = !sidebar.classList.contains('sidebar-open');
+        sidebar.classList.toggle('sidebar-open', willOpen);
+        document.body.classList.toggle('sidebar-mobile-open', willOpen);
+      }
+
+      function buildMobileBottomNav() {
+        const nav = document.getElementById('mobileBottomNav');
+        if (!nav) return;
+
+        const links = Array.from(sidebar.querySelectorAll('.sidebar-nav a.nav-item')).filter(function (a) {
+          return a.querySelector('span') && a.getAttribute('href');
+        });
+
+        const selected = links.slice(0, 4);
+        const html = selected.map(function (a) {
+          const href = a.getAttribute('href');
+          const iconClass = (a.querySelector('i') && a.querySelector('i').className) || 'fas fa-circle';
+          const label = (a.querySelector('span') && a.querySelector('span').textContent.trim()) || '';
+          const active = a.classList.contains('active') ? 'active' : '';
+          return '<a href="' + href + '" class="mobile-bottom-nav-item ' + active + '"><i class="' + iconClass + '"></i><span>' + label + '</span></a>';
+        }).join('');
+
+        nav.innerHTML = html + '<button type="button" id="mobileBottomMenuToggle" class="mobile-bottom-nav-item"><i class="fas fa-bars"></i><span>القائمة</span></button>';
+
+        const menuToggle = document.getElementById('mobileBottomMenuToggle');
+        if (menuToggle) {
+          menuToggle.addEventListener('click', toggleSidebar);
+        }
+      }
+
+      menuBtn.addEventListener('click', toggleSidebar);
+      if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+      backdrop.addEventListener('click', closeSidebar);
+
+      sidebar.querySelectorAll('a.nav-item').forEach(function (link) {
+        link.addEventListener('click', function () {
+          if (isMobile()) closeSidebar();
+        });
+      });
+
+      window.addEventListener('resize', function () {
+        if (!isMobile()) closeSidebar();
+        syncMobileTableMode();
+        setMobileTopbarTitle();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSidebar();
+      });
+
+      syncMobileTableMode();
+      setMobileTopbarTitle();
+      buildMobileBottomNav();
+
+      // Auto-inject CSRF token into all POST forms.
+      const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+      const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+      if (csrfToken) {
+        document.querySelectorAll('form').forEach(function (form) {
+          const method = (form.getAttribute('method') || 'get').toLowerCase();
+          if (method !== 'post') return;
+
+          let tokenInput = form.querySelector('input[name="csrf_token"]');
+          if (!tokenInput) {
+            tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = 'csrf_token';
+            form.appendChild(tokenInput);
+          }
+          tokenInput.value = csrfToken;
+        });
+
+        const originalFetch = window.fetch;
+        window.fetch = function (input, init) {
+          const options = init || {};
+          const method = (options.method || 'GET').toUpperCase();
+          const headers = new Headers(options.headers || {});
+
+          if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+            headers.set('X-CSRFToken', csrfToken);
+          }
+
+          return originalFetch(input, Object.assign({}, options, { headers: headers }));
+        };
+      }
+    })();
+  </script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

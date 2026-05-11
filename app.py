@@ -1,3 +1,5 @@
+# ...existing code...
+
 """
 نظام إدارة عيادة الأسنان
 Dental Clinic Management System
@@ -55,9 +57,16 @@ def create_app():
     env_name = os.environ.get('FLASK_ENV', '').lower() or os.environ.get('APP_ENV', '').lower()
     is_production = env_name == 'production'
 
+    # وضع التطوير المحلي
+    if not is_production:
+        app.config['DEBUG'] = True
+        app.config['TEMPLATES_AUTO_RELOAD'] = True
+    else:
+        app.config['DEBUG'] = False
+        app.config['TEMPLATES_AUTO_RELOAD'] = False
+
     # ─── إعدادات التطبيق ─────────────────────────────────────────
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dental-clinic-secret-2024-xK9mP')
-    app.config['DEBUG'] = False
     app.config['SESSION_TYPE'] = 'filesystem'
     app.config['SESSION_FILE_DIR'] = os.path.join(os.path.dirname(__file__), 'flask_session')
     app.config['SESSION_PERMANENT'] = True
@@ -277,10 +286,7 @@ def create_app():
 
 
 # Expose a module-level WSGI app so Gunicorn can run with app:app.
-app = create_app()
 
-
-if __name__ == '__main__':
-    from waitress import serve
-    print("Starting server on http://127.0.0.1:8080")
-    serve(app, host='0.0.0.0', port=8080, threads=8)
+if __name__ == "__main__":
+    app = create_app()
+    app.run(host="127.0.0.1", port=5000, debug=True)

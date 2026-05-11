@@ -24,6 +24,7 @@
       <div class="sidebar-logo-text">
         <h2>د. علي حسين</h2>
         <span>عيادة الأسنان المتخصصة</span>
+        <div style="color:red;font-weight:bold;">[اختبار: إذا رأيت هذا النص فالقالب صحيح]</div>
       </div>
     </div>
 
@@ -31,9 +32,15 @@
       <div class="sidebar-section-title">القائمة الرئيسية</div>
       {% if session.role == 'accountant' %}
       <a href="{{ url_for('patients.index') }}"
-         class="nav-item {% if request.endpoint and request.endpoint.startswith('patients.') %}active{% endif %}">
+	 class="nav-item {% if request.endpoint and request.endpoint.startswith('patients.') %}active{% endif %}">
         <div class="nav-item-icon"><i class="fas fa-users"></i></div>
         <span>المرضى</span>
+      </a>
+      <!-- زر مرضى التقويم -->
+      <a href="{{ url_for('ortho_patients.index') }}"
+         class="nav-item {% if request.endpoint and request.endpoint.startswith('ortho_patients.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-teeth"></i></div>
+        <span>مرضى التقويم</span>
       </a>
 
       <div class="sidebar-section-title">المالية</div>
@@ -86,6 +93,12 @@
          class="nav-item {% if request.endpoint and request.endpoint.startswith('patients.') %}active{% endif %}">
         <div class="nav-item-icon"><i class="fas fa-users"></i></div>
         <span>المرضى</span>
+      </a>
+      <!-- زر مرضى التقويم (لكل الأدوار) -->
+      <a href="{{ url_for('ortho_patients.index') }}"
+         class="nav-item {% if request.endpoint and request.endpoint.startswith('ortho_patients.') %}active{% endif %}">
+        <div class="nav-item-icon"><i class="fas fa-teeth"></i></div>
+        <span>مرضى التقويم</span>
       </a>
 
       <div class="sidebar-section-title">الطبية والمالية</div>

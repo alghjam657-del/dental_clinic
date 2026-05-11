@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}مرضى التقويم{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>
+      <div class="header-icon"><i class="fas fa-teeth"></i></div>
+      إدارة مرضى التقويم
+    </h2>
+    <p class="page-subtitle">قائمة جميع مرضى التقويم المسجلين في النظام</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:1rem">
+    <button class="btn btn-primary" onclick="openModal('addOrthoModal')">
+      <i class="fas fa-plus"></i> إضافة مريض تقويم
+    </button>
+  </div>
+</div>
+
+<!-- جدول مرضى التقويم -->
+<div class="card">
+  <div class="card-body">
+    {% if patients %}
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>الاسم الكامل</th>
+          <th>الهاتف</th>
+          <th>تاريخ البداية</th>
+          <th>الإجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in patients %}
+        <tr>
+          <td>{{ p.id }}</td>
+          <td>{{ p.full_name }}</td>
+          <td>{{ p.phone }}</td>
+          <td>{{ p.start_date }}</td>
+          <td class="actions">
+            <a href="#" class="btn btn-xs btn-info" title="عرض الملف">
+              <i class="fas fa-eye"></i>
+            </a>
+            <button class="btn btn-xs btn-warning" title="تعديل">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-xs btn-danger" title="حذف">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="alert alert-info">لا يوجد مرضى تقويم بعد.</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- مودال إضافة مريض تقويم (تجريبي) -->
+<div id="addOrthoModal" class="modal" style="display:none">
+  <div class="modal-content">
+    <h3>إضافة مريض تقويم جديد</h3>
+    <form id="addOrthoForm">
+      <input type="text" name="full_name" placeholder="الاسم الكامل" required>
+      <input type="text" name="phone" placeholder="رقم الهاتف" required>
+      <input type="date" name="start_date" placeholder="تاريخ بداية التقويم" required>
+      <button type="submit" class="btn btn-primary">حفظ</button>
+      <button type="button" class="btn btn-secondary" onclick="closeModal('addOrthoModal')">إلغاء</button>
+    </form>
+  </div>
+</div>
+<script>
+function openModal(id) {
+  document.getElementById(id).style.display = 'block';
+}
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+// إرسال النموذج (تجريبي)
+document.getElementById('addOrthoForm').onsubmit = function(e) {
+  e.preventDefault();
+  // يمكن لاحقًا إرسال البيانات عبر AJAX
+  closeModal('addOrthoModal');
+  alert('تمت إضافة مريض التقويم (تجريبي)');
+};
+</script>
+{% endblock %}

@@ -9,7 +9,14 @@ from flask_session import Session
 from flask_wtf import CSRFProtect
 from flask_wtf.csrf import CSRFError
 from werkzeug.middleware.proxy_fix import ProxyFix
+import hashlib
+import hmac
+import subprocess
 import os
+
+
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from db.database import init_db
 from routes.auth import auth_bp
@@ -19,11 +26,25 @@ from routes.medical import medical_bp
 from routes.dashboard import dashboard_bp
 from routes.settings import settings_bp
 from routes.reports import reports_bp
+from routes.ortho_patients import ortho_bp
 
 from datetime import date as _date
 
 
 csrf = CSRFProtect()
+
+
+def _is_valid_github_signature(payload: bytes, signature_header: str, secret: str) -> bool:
+    """Validate GitHub webhook signature (sha256=...)."""
+    if not signature_header or not secret:
+        return False
+
+    expected = 'sha256=' + hmac.new(
+        secret.encode('utf-8'),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature_header)
 
 
 def create_app():
@@ -73,6 +94,7 @@ def create_app():
     app.register_blueprint(medical_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(ortho_bp)
 
     @app.before_request
     def enforce_role_permissions():
@@ -226,6 +248,30 @@ def create_app():
     @app.route('/')
     def index():
         return redirect(url_for('auth.welcome'))
+
+    @app.route('/deploy', methods=['POST'])
+    @csrf.exempt
+    def deploy_webhook():
+        """GitHub webhook endpoint to trigger deployment script."""
+        secret = os.environ.get('WEBHOOK_SECRET', '').strip()
+        signature = request.headers.get('X-Hub-Signature-256', '')
+
+        if secret and not _is_valid_github_signature(request.get_data(), signature, secret):
+            return ('Forbidden', 403)
+
+        event = request.headers.get('X-GitHub-Event', '')
+        if event and event not in {'push', 'ping'}:
+            return ('Ignored', 202)
+
+        try:
+            subprocess.Popen(
+                ['/bin/bash', '-lc', 'nohup /root/deploy.sh >> /var/log/dental/deploy_hook.log 2>&1 &'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            return ('OK', 200)
+        except Exception:
+            return ('Deploy failed', 500)
 
     return app
 

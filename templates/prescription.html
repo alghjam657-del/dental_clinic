@@ -223,10 +223,16 @@
 
 /* ═══════════ طباعة ═══════════ */
 @media print {
-  /* Compact prescription print (thermal/receipt-like) */
-  @page { size: 80mm 210mm; margin: 2mm; }
+  /* A4 professional prescription print */
+  @page { size: A4 portrait; margin: 0; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  body { margin: 0 !important; background: #fff !important; }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    background: #fff !important;
+  }
   .sidebar, .mobile-topbar, .mobile-bottom-nav,
   #mobileBackdrop, .alert, #toast-container,
   .rx-toolbar, .page-title { display: none !important; }
@@ -235,64 +241,70 @@
     padding: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    height: 297mm !important;
   }
   .rx-paper {
-    width: 76mm !important;
-    max-width: 76mm !important;
-    margin: 0 auto !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
     box-shadow: none !important;
-    border: 1px solid #cbd5e1 !important;
+    border: none !important;
     border-radius: 0 !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
   }
   /* رأس */
-  .rx-head { padding: 6px 7px !important; grid-template-columns: 28px 1fr 34px !important; gap: 5px !important; }
-  .rx-tooth-logo svg { width: 22px !important; height: 22px !important; }
-  .rx-clinic-title { font-size: .58rem !important; }
-  .rx-doctor-label { font-size: .5rem !important; }
-  .rx-doctor-name { font-size: .7rem !important; }
-  .rx-cred-badge { font-size: .48rem !important; padding: 1px 4px !important; margin-bottom: 2px !important; }
-  .rx-reg-strip { padding: 3px 6px !important; }
-  .rx-reg-strip span { font-size: .5rem !important; line-height: 1.2 !important; }
+  .rx-head { padding: 14px 20px !important; grid-template-columns: 70px 1fr 90px !important; gap: 12px !important; }
+  .rx-tooth-logo svg { width: 40px !important; height: 40px !important; }
+  .rx-clinic-title { font-size: .9rem !important; }
+  .rx-doctor-label { font-size: .65rem !important; }
+  .rx-doctor-name { font-size: .95rem !important; }
+  .rx-cred-badge { font-size: .62rem !important; padding: 2px 7px !important; margin-bottom: 4px !important; }
+  .rx-reg-strip { padding: 7px 20px !important; }
+  .rx-reg-strip span { font-size: .7rem !important; line-height: 1.3 !important; }
   /* بيانات المريض */
   .rx-info-strip {
-    padding: 5px 6px !important;
+    padding: 10px 20px !important;
     display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 5px !important;
+    grid-template-columns: 1fr 120px 160px !important;
+    gap: 0 !important;
   }
   .rx-info-field {
-    border-left: none !important;
-    padding: 0 !important;
-    gap: 5px !important;
+    border-left: 1px solid #cbd5e1 !important;
+    padding: 0 10px !important;
+    gap: 8px !important;
   }
-  .rx-info-field label { font-size: .55rem !important; }
-  .rx-info-field input { font-size: .62rem !important; border-bottom: 1px solid #555 !important; }
+  .rx-info-field:first-child { border-left: none !important; padding-right: 0 !important; }
+  .rx-info-field:last-child { padding-left: 0 !important; }
+  .rx-info-field label { font-size: .72rem !important; }
+  .rx-info-field input { font-size: .82rem !important; border-bottom: 1px solid #555 !important; }
   /* الجسم */
-  .rx-body { padding: 6px !important; min-height: 100px !important; }
-  .rx-rx-label { font-size: .9rem !important; margin-bottom: 5px !important; }
-  .rx-watermark { display: none !important; }
+  .rx-body { padding: 14px 20px !important; min-height: 200mm !important; }
+  .rx-rx-label { font-size: 1.2rem !important; margin-bottom: 8px !important; }
+  .rx-watermark { opacity: .04 !important; }
   .rx-write-area textarea { display: none !important; }
   .rx-print-text {
     display: block !important;
     white-space: pre-wrap !important;
     word-break: break-word !important;
-    font-size: 8px !important;
+    font-size: 11px !important;
     font-family: 'Cairo', sans-serif !important;
-    line-height: 1.45 !important;
-    padding: 2px 0 !important;
+    line-height: 1.9 !important;
+    padding: 4px 0 !important;
     color: #0f172a !important;
   }
   /* التوقيع */
-  .rx-sign-area { padding: 5px 6px !important; page-break-inside: avoid !important; gap: 8px !important; }
-  .rx-sign-box { min-width: 60px !important; }
-  .rx-sign-box .sign-label { font-size: .52rem !important; margin-bottom: 12px !important; }
-  .rx-doc-sign { font-size: .56rem !important; }
+  .rx-sign-area { padding: 10px 20px !important; page-break-inside: avoid !important; gap: 20px !important; }
+  .rx-sign-box { min-width: 140px !important; }
+  .rx-sign-box .sign-label { font-size: .68rem !important; margin-bottom: 20px !important; }
+  .rx-doc-sign { font-size: .76rem !important; }
   /* التذييل */
-  .rx-footer { padding: 5px 6px !important; }
-  .rx-footer-phones { margin-bottom: 4px !important; padding-bottom: 4px !important; }
-  .rx-footer-phone { font-size: .56rem !important; gap: 4px !important; }
-  .rx-footer-phone .ph-icon { width: 12px !important; height: 12px !important; font-size: .42rem !important; }
-  .rx-footer-address { font-size: .5rem !important; gap: 3px !important; }
+  .rx-footer { padding: 10px 20px !important; }
+  .rx-footer-phones { margin-bottom: 6px !important; padding-bottom: 6px !important; }
+  .rx-footer-phone { font-size: .82rem !important; gap: 8px !important; }
+  .rx-footer-phone .ph-icon { width: 22px !important; height: 22px !important; font-size: .65rem !important; }
+  .rx-footer-address { font-size: .7rem !important; gap: 6px !important; }
 }
 </style>
 

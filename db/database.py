@@ -1,5 +1,5 @@
 """
-إدارة قاعدة البيانات - الاتصال والتهيئة
+ إدارة قاعدة البيانات - الاتصال والتهيئة
 Database Connection and Initialization
 """
 
@@ -97,6 +97,33 @@ def init_db(app):
                 created_at       TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
                 FOREIGN KEY (patient_id)        REFERENCES patients(id) ON DELETE CASCADE,
                 FOREIGN KEY (treatment_plan_id) REFERENCES treatment_plans(id) ON DELETE SET NULL
+            )
+        ''')
+
+        # ─── جدول مرضى التقويم ────────────────────────────────
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ortho_patients (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                full_name     TEXT    NOT NULL,
+                phone         TEXT    NOT NULL,
+                start_date    TEXT    NOT NULL,
+                notes         TEXT,
+                created_at    TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+            )
+        ''')
+
+        # ─── جدول أقساط التقويم ───────────────────────────────
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ortho_installments (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                ortho_patient_id  INTEGER NOT NULL,
+                due_date          TEXT    NOT NULL,
+                amount            REAL    NOT NULL,
+                paid              INTEGER NOT NULL DEFAULT 0,
+                paid_date         TEXT,
+                notes             TEXT,
+                created_at        TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
+                FOREIGN KEY (ortho_patient_id) REFERENCES ortho_patients(id) ON DELETE CASCADE
             )
         ''')
 
@@ -240,7 +267,7 @@ def init_db(app):
             # ضمان أن الحساب الافتراضي admin يبقى بصلاحية مدير النظام
             cursor.execute(
                 "UPDATE users SET full_name = ?, role = ? WHERE username = ?",
-                ('مدير النظام', 'admin', 'admin')
+                (' مدير النظام', 'admin', 'admin')
             )
             db.commit()
 
